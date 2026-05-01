@@ -1,0 +1,216 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\Pago;
+use App\Models\Contrato;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+#[Layout('layouts.app')]
+#[Title('Pagos')]
+class Pagos extends Component
+{
+    use WithPagination;
+
+    #[Url]
+    public string $busqueda = '';
+    #[Url]
+    public string $filtroEstado = '';
+    #[Url]
+    public int $filtroMes = 0;
+    #[Url]
+    public int $filtroAnio = 0;
+    #[Url]
+    public ?int $filtroContrato = null;
+
+    public bool $modalAbrir = false;
+    public ?int $pagoId = null;
+
+    public ?int $contratoId = null;
+    public string $fechaPago = '';
+    public string $fechaVencimiento = '';
+    public int $periodoMes = 0;
+    public int $periodoAnio = 0;
+    public string $monto = '';
+    public string $recargo = '0';
+    public string $descuento = '0';
+    public string $medioPago = 'efectivo';
+    public string $numeroComprobante = '';
+    public string $estado = 'pagado';
+    public string $observaciones = '';
+
+    protected $rules = [
+        'contratoId'       => 'required',
+        'fechaVencimiento' => 'required|date',
+        'periodoMes'       => 'required|integer|between:1,12',
+        'periodoAnio'      => 'required|integer|min:2020',
+        'monto'            => 'required|numeric|min:1',
+    ];
+
+    public function updatingBusqueda(): void
+    {
+        $this->resetPage();
+    }
+
+    public function mount(): void
+    {
+        $this->filtroAnio      = now()->year;
+        $this->periodoMes      = now()->month;
+        $this->periodoAnio     = now()->year;
+        $this->fechaVencimiento = now()->format('Y-m-d');
+        $this->fechaPago       = now()->format('Y-m-d');
+    }
+
+    public function render()
+    {
+        $pagos = Pago::with(['contrato.propiedad.propietario', 'contrato.inquilino'])
+            ->when($this->busqueda, fn($q) =>
+                $q->whereHas('contrato.inquilino', fn($i) =>
+                    $i->where('apellido', 'like', "%{$this->busqueda}%")
+                      ->orWhere('nombre', 'like', "%{$this->busqueda}%")
+                )
+            )
+            ->when($this->filtroEstado,   fn($q) => $q->where('estado', $this->filtroEstado))
+            ->when($this->filtroMes,      fn($q) => $q->where('periodo_mes', $this->filtroMes))
+            ->when($this->filtroAnio,     fn($q) => $q->where('periodo_anio', $this->filtroAnio))
+            ->when($this->filtroContrato, fn($q) => $q->where('contrato_id', $this->filtroContrato))
+            ->orderByRaw("FIELD(estado, 'vencido', 'pendiente', 'pagado', 'parcial')")
+            ->orderByDesc('periodo_anio')
+            ->orderByDesc('periodo_mes')
+            ->paginate(20);
+
+        $totalCobrado = Pago::where('estado', 'pagado')
+            ->when($this->filtroMes,  fn($q) => $q->where('periodo_mes', $this->filtroMes))
+            ->when($this->filtroAnio, fn($q) => $q->where('periodo_anio', $this->filtroAnio))
+            ->sum('total');
+
+        $totalPendiente = Pago::whereIn('estado', ['pendiente', 'vencido'])
+            ->when($this->filtroMes,  fn($q) => $q->where('periodo_mes', $this->filtroMes))
+            ->when($this->filtroAnio, fn($q) => $q->where('periodo_anio', $this->filtroAnio))
+            ->sum('total');
+
+        return view('livewire.pagos', [
+            'pagos'          => $pagos,
+            'totalCobrado'   => $totalCobrado,
+            'totalPendiente' => $totalPendiente,
+            'contratos'      => Contrato::with(['propiedad', 'inquilino'])->where('estado', 'activo')->get(),
+        ]);
+    }
+
+    public function nuevoPago(): void
+    {
+        $this->pagoId          = null;
+        $this->contratoId      = null;
+        $this->monto           = '';
+        $this->recargo         = '0';
+        $this->descuento       = '0';
+        $this->medioPago       = 'efectivo';
+        $this->estado          = 'pagado';
+        $this->numeroComprobante = '';
+        $this->observaciones   = '';
+        $this->periodoMes      = now()->month;
+        $this->periodoAnio     = now()->year;
+        $this->fechaPago       = now()->format('Y-m-d');
+        $this->fechaVencimiento = now()->format('Y-m-d');
+        $this->resetValidation();
+        $this->modalAbrir      = true;
+    }
+
+    public function abrirModalCobro(int $id): void
+    {
+        $pago = Pago::with(['contrato'])->findOrFail($id);
+        $this->pagoId           = $id;
+        $this->contratoId       = $pago->contrato_id;
+        $this->periodoMes       = $pago->periodo_mes;
+        $this->periodoAnio      = $pago->periodo_anio;
+        $this->fechaVencimiento = $pago->fecha_vencimiento->format('Y-m-d');
+        $this->fechaPago        = now()->format('Y-m-d');
+        $this->monto            = $pago->monto;
+        $this->recargo          = $pago->recargo ?? '0';
+        $this->descuento        = $pago->descuento ?? '0';
+        $this->medioPago        = 'efectivo';
+        $this->estado           = 'pagado';
+        $this->numeroComprobante = '';
+        $this->observaciones    = $pago->observaciones ?? '';
+        $this->resetValidation();
+        $this->modalAbrir       = true;
+    }
+
+    public function updatedContratoId(): void
+    {
+        if ($this->contratoId) {
+            $contrato = Contrato::find($this->contratoId);
+            if ($contrato) {
+                $this->monto = $contrato->monto_alquiler;
+            }
+        }
+    }
+
+    public function guardar(): void
+    {
+        $this->validate();
+
+        $monto    = (float) $this->monto;
+        $recargo  = (float) $this->recargo;
+        $descuento = (float) $this->descuento;
+        $total    = $monto + $recargo - $descuento;
+
+        $datos = [
+            'contrato_id'       => $this->contratoId,
+            'fecha_pago'        => $this->estado === 'pagado' ? $this->fechaPago : null,
+            'fecha_vencimiento' => $this->fechaVencimiento,
+            'periodo_mes'       => $this->periodoMes,
+            'periodo_anio'      => $this->periodoAnio,
+            'monto'             => $monto,
+            'recargo'           => $recargo,
+            'descuento'         => $descuento,
+            'total'             => $total,
+            'medio_pago'        => $this->medioPago,
+            'numero_comprobante'=> $this->numeroComprobante ?: null,
+            'estado'            => $this->estado,
+            'observaciones'     => $this->observaciones ?: null,
+        ];
+
+        if ($this->pagoId) {
+            Pago::findOrFail($this->pagoId)->update($datos);
+            $msg = 'Pago registrado correctamente.';
+        } else {
+            Pago::create($datos);
+            $msg = 'Pago creado correctamente.';
+        }
+
+        $this->cerrarModal();
+        session()->flash('success', $msg);
+    }
+
+    public function generarRecibo(int $id)
+    {
+        $pago = Pago::with([
+            'contrato.propiedad.propietario',
+            'contrato.inquilino',
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('pdf.recibo', compact('pago'))
+            ->setPaper('a4', 'portrait');
+
+        $nombre = 'recibo_' . str_pad($pago->id, 6, '0', STR_PAD_LEFT)
+            . '_' . $pago->periodo_mes . '_' . $pago->periodo_anio . '.pdf';
+
+        return response()->streamDownload(
+            fn() => print($pdf->output()),
+            $nombre,
+            ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    public function cerrarModal(): void
+    {
+        $this->modalAbrir = false;
+        $this->resetValidation();
+    }
+}
