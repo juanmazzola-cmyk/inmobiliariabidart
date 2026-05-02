@@ -86,7 +86,8 @@ Route::get('/pagos/{id}/recibo', function (int $id) {
         'contrato.inquilino',
     ])->findOrFail($id);
 
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.recibo', compact('pago'))
+    $config = \App\Models\Configuracion::get();
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.recibo', compact('pago', 'config'))
         ->setPaper('a4', 'portrait');
 
     $nombre = 'recibo_' . str_pad($pago->id, 6, '0', STR_PAD_LEFT)

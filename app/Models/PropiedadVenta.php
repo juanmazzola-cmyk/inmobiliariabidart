@@ -80,8 +80,8 @@ class PropiedadVenta extends Model
     public function getEstadoBadgeAttribute(): string
     {
         return match ($this->estado) {
-            'disponible' => 'bg-green-100 text-green-700',
-            'vendida'    => 'bg-gray-100 text-gray-600',
+            'disponible' => 'bg-blue-100 text-blue-700',
+            'vendida'    => 'bg-green-100 text-green-700',
             'reservada'  => 'bg-yellow-100 text-yellow-700',
             default      => 'bg-gray-100 text-gray-600',
         };

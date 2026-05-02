@@ -66,7 +66,7 @@
                             <td class="px-4 py-3">
                                 <p class="font-medium text-gray-900">{{ $c->inquilino->nombre_completo }}</p>
                                 @if ($c->inquilino->telefono)
-                                    <p class="text-xs text-gray-400">{{ $c->inquilino->telefono }}</p>
+                                    <p class="text-xs text-gray-400">+54 {{ $c->inquilino->telefono }}</p>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-center text-xs">
@@ -138,13 +138,21 @@
                                     {{-- Rescindir (solo activos/vencidos) --}}
                                     @if (in_array($c->estado, ['activo', 'vencido']))
                                         <button wire:click="rescindir({{ $c->id }})"
-                                            wire:confirm="¿Rescindir este contrato? La propiedad volverá a estar disponible."
-                                            class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Rescindir">
+                                            wire:confirm="¿Rescindir este contrato? La propiedad volverá a estar disponible. Los pagos y liquidaciones se conservan."
+                                            class="p-1.5 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Rescindir">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                             </svg>
                                         </button>
                                     @endif
+                                    {{-- Eliminar (borra todo en cascada) --}}
+                                    <button wire:click="eliminar({{ $c->id }})"
+                                        wire:confirm="¿Eliminar este contrato? Se borrarán TODOS sus pagos y liquidaciones. Esta acción no se puede deshacer."
+                                        class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -286,7 +294,7 @@
                                     <span class="font-semibold">Propietario:</span>
                                     {{ $propiedadSeleccionada->propietario->nombre_completo }}
                                     @if ($propiedadSeleccionada->propietario->telefono)
-                                        · {{ $propiedadSeleccionada->propietario->telefono }}
+                                        · +54 {{ $propiedadSeleccionada->propietario->telefono }}
                                     @endif
                                 </div>
                             @endif

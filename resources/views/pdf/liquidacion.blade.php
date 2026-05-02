@@ -72,8 +72,8 @@
     {{-- CABECERA --}}
     <div class="header">
         <div class="header-left">
-            <div class="empresa-nombre">Inmobiliaria</div>
-            <div class="empresa-sub">Sistema de Gestión Inmobiliaria</div>
+            <div class="empresa-nombre">{{ $config->razon_social ?: $config->nombre }}</div>
+            <div class="empresa-sub">{{ $config->direccion }}</div>
         </div>
         <div class="header-right">
             <div class="doc-titulo">LIQUIDACIÓN A PROPIETARIO</div>
@@ -277,7 +277,7 @@
     <div class="firma-section">
         <div class="firma-col">
             <div class="firma-linea">
-                Firma y sello Inmobiliaria
+                {{ $config->razon_social ?: $config->nombre }}
             </div>
         </div>
         <div class="firma-col">

@@ -133,7 +133,7 @@
         <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
             <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-800">{{ $title ?? 'Dashboard' }}</h2>
-                <div class="text-sm text-gray-500">{{ config('app.name') }}</div>
+                <div class="text-sm text-gray-500 text-right leading-tight">{{ \App\Models\Configuracion::get()->razon_social ?: \App\Models\Configuracion::get()->nombre }}</div>
             </header>
 
             <main class="flex-1 min-h-0 overflow-y-auto p-6">

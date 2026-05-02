@@ -66,14 +66,15 @@ Todos usan `#[Layout('layouts.app')]` y `#[Title('...')]`.
 
 ## Convenciones y patrones importantes
 
-### Nombres siempre en MAYÚSCULAS
-Los accessors `getNombreCompletoAttribute()` en `Inquilino` y `Propietario` retornan con `mb_strtoupper()`:
+### Nombres en Title Case
+Los accessors `getNombreCompletoAttribute()` en `Inquilino` y `Propietario` usan `mb_convert_case(..., MB_CASE_TITLE)`:
 ```php
 public function getNombreCompletoAttribute(): string
 {
-    return mb_strtoupper("{$this->apellido}, {$this->nombre}");
+    return mb_convert_case($this->apellido, MB_CASE_TITLE) . ', ' . mb_convert_case($this->nombre, MB_CASE_TITLE);
 }
 ```
+Formato resultante: `García, Juan`. Soporta caracteres especiales (ñ, á, etc.).
 
 ### Separador de miles: punto (formato argentino)
 Todos los valores monetarios usan `number_format($valor, 0, ',', '.')`.
@@ -105,6 +106,13 @@ Botón ↑ (verde) en contratos activos/vencidos. Propiedades del componente:
 `modalAumento`, `aumentoContratoId`, `tipoAumento` (porcentaje|valor), `valorAumento`, `montoActualAumento`, `monedaAumento`, `actualizarCuotasAumento`.
 Métodos: `abrirModalAumento()`, `aplicarAumento()`, `cerrarModalAumento()`.
 
+### Rescindir vs Eliminar contratos
+Dos acciones distintas en la tabla de contratos:
+- **Rescindir** (× naranja) — solo activos/vencidos. Cambia estado a `rescindido`, libera la propiedad a `disponible`. Conserva todos los pagos y liquidaciones.
+- **Eliminar** (🗑 rojo) — disponible en todos los estados. Borra el contrato físicamente; el CASCADE en BD elimina automáticamente todos sus pagos y liquidaciones.
+
+La FK `contrato_id` en `pagos` y `liquidaciones` usa `ON DELETE CASCADE` (migración `2026_05_01_022406_add_cascade_delete_to_pagos_and_liquidaciones.php`).
+
 ### Fotos de propiedades (alquiler y venta)
 - Se guardan en `storage/app/public/propiedades-alquiler/` y `storage/app/public/propiedades-venta/`
 - Columna `fotos JSON nullable` en ambas tablas, cast `'fotos' => 'array'` en los modelos
@@ -131,6 +139,22 @@ El modal de nueva liquidación tiene un toggle **% Porcentaje / $ Valor fijo**:
 ### PDFs con dos copias
 - **Recibo de pago** (`resources/views/pdf/recibo.blade.php`): dos copias en una hoja A4 separadas por línea de corte `✂ CORTE ✂`. Cada copia tiene etiqueta ORIGINAL / DUPLICADO.
 - **Liquidación** (`resources/views/pdf/liquidacion.blade.php`): dos páginas separadas (`page-break-after: always`), cada una con etiqueta ORIGINAL / DUPLICADO.
+- Ambos PDFs muestran `$config->razon_social ?: $config->nombre` en el encabezado y firma.
+- El recibo recibe `$config` desde la closure en `routes/web.php`. La liquidación lo recibe desde `Liquidaciones::generarPdf()`.
+
+### Teléfonos con prefijo +54
+- Los inputs de teléfono en Propietarios, Inquilinos y Configuración usan un addon visual fijo "+54" (izquierda del input).
+- El valor guardado en BD es solo el número local (ej: `9 11 1234-5678`).
+- En todos los lugares de display se antepone "+54 " al número almacenado.
+
+### Tarjetas de propiedades (alquiler y venta) — estilo unificado
+- Ambas páginas usan el mismo estilo de card: badge azul para tipo (`bg-blue-100 text-blue-700`), emojis `📐` para superficie y `🚗` para cochera, `👤` para propietario.
+- El badge de estado usa: disponible → azul, alquilada/vendida → verde, reservada → amarillo, en reparación/inactiva → gris.
+- La barra de búsqueda/filtros está envuelta en un panel `bg-white rounded-xl border shadow-sm p-4`, con `flex flex-wrap gap-3 items-end` y el botón `ml-auto`.
+
+### Razón social en header y PDFs
+- El header del layout (`layouts/app.blade.php`) muestra `Configuracion::get()->razon_social ?: nombre` arriba a la derecha.
+- Los PDFs de recibo y liquidación también usan la razón social en encabezado y firma.
 
 ### Validaciones — mensajes en español
 Siempre definir mensajes personalizados en `$messages` para todas las reglas usadas (incluyendo `.min`, `.required`, `.numeric`, etc.) para evitar que aparezcan claves crudas tipo `validation.min.string`.
@@ -177,7 +201,7 @@ php artisan optimize:clear
 
 ## Notas de desarrollo
 
-- No usar `git` — el proyecto no está bajo control de versiones.
+- El proyecto usa `git` (inicializado). Commit inicial: `88b07a4`.
 - El entorno es Windows 10 con XAMPP. Los paths son `C:\xampp\htdocs\inmobiliaria\`.
 - Para abrir el proyecto: `http://localhost/inmobiliaria/public/`
 - La URL base en producción puede cambiar; los assets usan `asset()` y `storage/`.

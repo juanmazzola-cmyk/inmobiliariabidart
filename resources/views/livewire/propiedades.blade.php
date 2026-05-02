@@ -14,33 +14,37 @@
     @endif
 
     {{-- Filtros + botón nuevo --}}
-    <div class="flex flex-col sm:flex-row gap-3 mb-6">
-        <input wire:model.live="busqueda" type="text" placeholder="Buscar dirección, ciudad o propietario..."
-            class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <select wire:model.live="filtroTipo" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">Todos los tipos</option>
-            <option value="casa">Casa</option>
-            <option value="departamento">Departamento</option>
-            <option value="local_comercial">Local Comercial</option>
-            <option value="oficina">Oficina</option>
-            <option value="terreno">Terreno</option>
-            <option value="galpon">Galpón</option>
-            <option value="otro">Otro</option>
-        </select>
-        <select wire:model.live="filtroEstado" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">Todos los estados</option>
-            <option value="disponible">Disponible</option>
-            <option value="alquilada">Alquilada</option>
-            <option value="en_reparacion">En Reparación</option>
-            <option value="inactiva">Inactiva</option>
-        </select>
-        <button wire:click="nueva"
-            class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Nueva Propiedad
-        </button>
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+        <div class="flex flex-wrap gap-3 items-end">
+            <input wire:model.live="busqueda" type="text" placeholder="Buscar dirección, ciudad o propietario..."
+                class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
+            <select wire:model.live="filtroTipo" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Todos los tipos</option>
+                <option value="casa">Casa</option>
+                <option value="departamento">Departamento</option>
+                <option value="local_comercial">Local Comercial</option>
+                <option value="oficina">Oficina</option>
+                <option value="terreno">Terreno</option>
+                <option value="galpon">Galpón</option>
+                <option value="otro">Otro</option>
+            </select>
+            <select wire:model.live="filtroEstado" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Todos los estados</option>
+                <option value="disponible">Disponible</option>
+                <option value="alquilada">Alquilada</option>
+                <option value="en_reparacion">En Reparación</option>
+                <option value="inactiva">Inactiva</option>
+            </select>
+            <div class="ml-auto">
+                <button wire:click="nueva"
+                    class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Nueva Propiedad
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- Tarjetas --}}

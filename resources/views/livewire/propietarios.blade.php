@@ -40,7 +40,7 @@
                         </td>
                         <td class="px-4 py-3">
                             @if($p->email) <p class="text-gray-700">{{ $p->email }}</p> @endif
-                            @if($p->telefono) <p class="text-xs text-gray-400">{{ $p->telefono }}</p> @endif
+                            @if($p->telefono) <p class="text-xs text-gray-400">+54 {{ $p->telefono }}</p> @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $p->ciudad ?? '—' }}</td>
                         <td class="px-4 py-3 text-center">
@@ -126,7 +126,10 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                    <input type="text" wire:model="telefono" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="flex">
+                        <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm select-none">+54</span>
+                        <input type="text" wire:model="telefono" placeholder="9 11 1234-5678" class="flex-1 border border-gray-200 rounded-r-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>

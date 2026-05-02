@@ -255,7 +255,8 @@ class Liquidaciones extends Component
             ->whereYear('fecha', $liquidacion->periodo_anio)
             ->get();
 
-        $pdf = Pdf::loadView('pdf.liquidacion', compact('liquidacion', 'gastos'))
+        $config = \App\Models\Configuracion::get();
+        $pdf = Pdf::loadView('pdf.liquidacion', compact('liquidacion', 'gastos', 'config'))
             ->setPaper('a4', 'portrait');
 
         $nombre = 'liquidacion_' . str_pad($liquidacion->id, 6, '0', STR_PAD_LEFT)

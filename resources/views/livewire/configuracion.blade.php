@@ -75,8 +75,11 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Teléfono</label>
-                    <input wire:model="telefono" type="text"
-                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="flex">
+                        <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm select-none">+54</span>
+                        <input wire:model="telefono" type="text" placeholder="9 11 1234-5678"
+                            class="flex-1 border border-gray-200 rounded-r-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Email</label>

@@ -71,8 +71,8 @@
 
     <div class="header">
         <div class="header-left">
-            <div class="empresa-nombre">Inmobiliaria</div>
-            <div class="empresa-sub">Sistema de Administración de Propiedades</div>
+            <div class="empresa-nombre">{{ $config->razon_social ?: $config->nombre }}</div>
+            <div class="empresa-sub">{{ $config->direccion }}</div>
         </div>
         <div class="header-right">
             <div class="recibo-titulo">RECIBO DE PAGO</div>
@@ -87,7 +87,7 @@
                 <strong>{{ $pago->contrato->inquilino->nombre_completo }}</strong><br>
                 DNI: {{ $pago->contrato->inquilino->dni }}<br>
                 @if ($pago->contrato->inquilino->telefono)
-                    Tel: {{ $pago->contrato->inquilino->telefono }}<br>
+                    Tel: +54 {{ $pago->contrato->inquilino->telefono }}<br>
                 @endif
                 @if ($pago->contrato->inquilino->email)
                     {{ $pago->contrato->inquilino->email }}
@@ -164,7 +164,7 @@
     <div class="firmas">
         <div class="firma">
             <div class="firma-linea"></div>
-            <div class="firma-label">Firma Inmobiliaria</div>
+            <div class="firma-label">{{ $config->razon_social ?: $config->nombre }}</div>
         </div>
         <div class="firma">
             <div class="firma-linea"></div>

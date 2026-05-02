@@ -275,6 +275,18 @@ class Contratos extends Component
         session()->flash('success', 'Contrato rescindido. La propiedad quedó disponible.');
     }
 
+    public function eliminar(int $id): void
+    {
+        $contrato = Contrato::findOrFail($id);
+        // Liberar propiedad si estaba alquilada
+        if (in_array($contrato->estado, ['activo', 'vencido'])) {
+            $contrato->propiedad()->update(['estado' => 'disponible']);
+        }
+        // El cascade en BD elimina pagos y liquidaciones automáticamente
+        $contrato->delete();
+        session()->flash('success', 'Contrato eliminado junto con sus pagos y liquidaciones.');
+    }
+
     public function abrirModalAumento(int $id): void
     {
         $c = Contrato::findOrFail($id);

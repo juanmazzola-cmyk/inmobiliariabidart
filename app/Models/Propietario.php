@@ -45,6 +45,6 @@ class Propietario extends Model
 
     public function getNombreCompletoAttribute(): string
     {
-        return mb_strtoupper("{$this->apellido}, {$this->nombre}");
+        return mb_convert_case($this->apellido, MB_CASE_TITLE) . ', ' . mb_convert_case($this->nombre, MB_CASE_TITLE);
     }
 }

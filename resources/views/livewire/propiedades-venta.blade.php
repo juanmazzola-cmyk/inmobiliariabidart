@@ -100,38 +100,30 @@
 
                     {{-- Info --}}
                     <div class="p-4">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ $propiedad->tipo_label }}</p>
-                                <p class="font-semibold text-gray-800 text-sm mt-0.5">{{ $propiedad->direccion_completa }}</p>
+                        <div class="mb-2">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">{{ $propiedad->tipo_label }}</span>
+                                <p class="text-base font-bold text-blue-600 whitespace-nowrap">{{ $propiedad->precio_formateado }}</p>
                             </div>
-                            <p class="text-base font-bold text-blue-600 whitespace-nowrap">{{ $propiedad->precio_formateado }}</p>
+                            <p class="font-semibold text-gray-900 text-sm">{{ $propiedad->direccion_completa }}</p>
                         </div>
 
                         {{-- Atributos --}}
-                        <div class="flex flex-wrap gap-3 mt-3 text-xs text-gray-500">
+                        <div class="space-y-1 text-xs text-gray-500 mt-3">
+                            @if ($propiedad->propietario)
+                                <p>👤 <span class="text-gray-700">{{ $propiedad->propietario->nombre_completo }}</span></p>
+                            @endif
                             @if ($propiedad->superficie_total)
-                                <span class="flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
-                                    </svg>
-                                    {{ number_format($propiedad->superficie_total, 0) }} m²
-                                </span>
+                                <p>📐 {{ number_format($propiedad->superficie_total, 0) }} m²
+                                    @if ($propiedad->ambientes) · {{ $propiedad->ambientes }} amb. @endif
+                                    @if ($propiedad->banios) · {{ $propiedad->banios }} baño/s @endif
+                                    @if ($propiedad->cochera) · 🚗 cochera @endif
+                                </p>
                             @endif
-                            @if ($propiedad->ambientes)
-                                <span>{{ $propiedad->ambientes }} amb.</span>
-                            @endif
-                            @if ($propiedad->banios)
-                                <span>{{ $propiedad->banios }} baño{{ $propiedad->banios > 1 ? 's' : '' }}</span>
-                            @endif
-                            @if ($propiedad->cochera)
-                                <span class="text-green-600">Cochera</span>
+                            @if ($propiedad->descripcion)
+                                <p class="text-gray-400 line-clamp-2">{{ $propiedad->descripcion }}</p>
                             @endif
                         </div>
-
-                        @if ($propiedad->propietario)
-                            <p class="text-xs text-gray-400 mt-2">Prop: {{ $propiedad->propietario->nombre_completo }}</p>
-                        @endif
 
                         {{-- Acciones --}}
                         <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
