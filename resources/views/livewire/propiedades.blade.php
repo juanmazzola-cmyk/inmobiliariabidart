@@ -97,9 +97,6 @@
                 </div>
 
                 <div class="space-y-1 text-xs text-gray-500 mb-3">
-                    @if($p->propietario)
-                    <p>👤 <span class="text-gray-700">{{ $p->propietario->nombre_completo }}</span></p>
-                    @endif
                     @if($p->superficie_total)
                     <p>📐 {{ number_format($p->superficie_total, 0) }} m²
                         @if($p->ambientes) · {{ $p->ambientes }} amb. @endif
@@ -111,7 +108,7 @@
                     <p class="text-gray-400 line-clamp-2">{{ $p->descripcion }}</p>
                     @endif
                     @if($p->valor_referencia)
-                    <p class="text-sm font-semibold text-green-700 mt-1">$ {{ number_format($p->valor_referencia, 0, ',', '.') }}</p>
+                    <p class="text-sm font-semibold text-green-700 mt-1">Valor: $ {{ number_format($p->valor_referencia, 0, ',', '.') }}</p>
                     @endif
                 </div>
 
