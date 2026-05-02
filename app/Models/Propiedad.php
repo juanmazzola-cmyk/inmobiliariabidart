@@ -26,15 +26,17 @@ class Propiedad extends Model
         'banios',
         'cochera',
         'descripcion',
+        'valor_referencia',
         'fotos',
         'estado',
     ];
 
     protected $casts = [
-        'cochera'           => 'boolean',
-        'superficie_total'  => 'decimal:2',
-        'superficie_cubierta' => 'decimal:2',
-        'fotos'             => 'array',
+        'cochera'            => 'boolean',
+        'superficie_total'   => 'decimal:2',
+        'superficie_cubierta'=> 'decimal:2',
+        'valor_referencia'   => 'decimal:2',
+        'fotos'              => 'array',
     ];
 
     public function getPrimeraFotoAttribute(): ?string

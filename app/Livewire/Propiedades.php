@@ -45,6 +45,7 @@ class Propiedades extends Component
     public string $banios            = '';
     public bool $cochera             = false;
     public string $descripcion       = '';
+    public string $valorReferencia   = '';
     public string $estado            = 'disponible';
 
     public array $fotosActuales  = [];
@@ -77,6 +78,14 @@ class Propiedades extends Component
         $this->resetPage();
     }
 
+    public function updatedValorReferencia(): void
+    {
+        $raw = str_replace(['.', ',', ' '], '', $this->valorReferencia);
+        if ($raw !== '' && is_numeric($raw)) {
+            $this->valorReferencia = number_format((int) $raw, 0, ',', '.');
+        }
+    }
+
     public function nueva(): void
     {
         $this->resetForm();
@@ -102,6 +111,9 @@ class Propiedades extends Component
         $this->banios             = $p->banios ?? '';
         $this->cochera            = $p->cochera;
         $this->descripcion        = $p->descripcion ?? '';
+        $this->valorReferencia    = $p->valor_referencia
+            ? number_format($p->valor_referencia, 0, ',', '.')
+            : '';
         $this->estado             = $p->estado;
         $this->fotosActuales      = $p->fotos ?? [];
         $this->fotosEliminar      = [];
@@ -144,6 +156,9 @@ class Propiedades extends Component
             'banios'              => $this->banios ?: null,
             'cochera'             => $this->cochera,
             'descripcion'         => $this->descripcion ?: null,
+            'valor_referencia'    => $this->valorReferencia !== ''
+                ? str_replace(['.', ' '], '', $this->valorReferencia)
+                : null,
             'fotos'               => count($fotos) > 0 ? $fotos : null,
             'estado'              => $this->estado,
         ];
@@ -195,6 +210,7 @@ class Propiedades extends Component
         $this->banios             = '';
         $this->cochera            = false;
         $this->descripcion        = '';
+        $this->valorReferencia    = '';
         $this->fotosActuales      = [];
         $this->fotosEliminar      = [];
         $this->nuevasFotos        = [];

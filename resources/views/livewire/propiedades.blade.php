@@ -110,6 +110,9 @@
                     @if($p->descripcion)
                     <p class="text-gray-400 line-clamp-2">{{ $p->descripcion }}</p>
                     @endif
+                    @if($p->valor_referencia)
+                    <p class="text-sm font-semibold text-green-700 mt-1">$ {{ number_format($p->valor_referencia, 0, ',', '.') }}</p>
+                    @endif
                 </div>
 
                 {{-- Miniaturas de fotos adicionales --}}
@@ -286,6 +289,18 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
                     <textarea wire:model="descripcion" rows="3"
                         class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                </div>
+
+                {{-- Valor de referencia --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Valor de referencia ($)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium select-none">$</span>
+                        <input wire:model.blur="valorReferencia" type="text" inputmode="numeric"
+                            placeholder="0"
+                            class="w-full border border-gray-200 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Precio orientativo para mostrar en la ficha de la propiedad.</p>
                 </div>
 
                 {{-- Fotos --}}
