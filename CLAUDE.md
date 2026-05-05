@@ -51,14 +51,14 @@
 Todos usan `#[Layout('layouts.app')]` y `#[Title('...')]`.
 
 - `Dashboard` — KPIs, alquileres vencidos, contratos próximos a vencer, marca de agua
-- `Propietarios` — CRUD + conteo de propiedades alquiler/venta como links
-- `Inquilinos` — CRUD
+- `Propietarios` — CRUD + conteo de propiedades alquiler/venta como links. DNI opcional. Al guardar, convierte nombre y apellido a Title Case.
+- `Inquilinos` — CRUD. Al guardar, convierte nombre, apellido y ocupación a Title Case.
 - `Propiedades` — CRUD alquileres con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
 - `PropiedadesVenta` — CRUD ventas con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
-- `Contratos` — CRUD + modal de aumento de alquiler (% o valor fijo) + campo comisión en $
+- `Contratos` — CRUD + modal de aumento de alquiler (% o valor fijo) + campo comisión en $. En el sidebar se muestra como **"Contratos de alquiler"**.
 - `Pagos` — registro de cobros, descarga de recibo PDF (dos copias: ORIGINAL/DUPLICADO en una hoja)
 - `Gastos` — CRUD gastos por propiedad
-- `Liquidaciones` — generación de liquidaciones con descuento por % o valor fijo (ARS/USD), PDF (dos páginas: ORIGINAL/DUPLICADO)
+- `Liquidaciones` — generación de liquidaciones con descuento por % o valor fijo (ARS/USD), PDF (dos páginas: ORIGINAL/DUPLICADO). Estados: solo `emitida` y `pagada` (se eliminó `borrador`). Se crea directamente como `emitida`.
 - `Reportes` — reportes varios incluyendo propiedades vendidas
 - `Configuracion` — datos de la empresa, logo, backup/restore de base de datos
 
@@ -135,9 +135,11 @@ El modal de nueva liquidación tiene un toggle **% Porcentaje / $ Valor fijo**:
 - Valor fijo: el usuario ingresa el monto directamente (con selector ARS/USD para display)
   - Al guardar con valor fijo: `comision_porcentaje` se calcula en reverso (`monto / alquiler * 100`)
 - Propiedades: `nuevaDescuentoTipo` ('porcentaje'|'valor'), `nuevaDescuentoValorFijo`, `nuevaDescuentoMoneda`
+- La columna `descuento_tipo` en la tabla `liquidaciones` guarda cómo se ingresó el descuento
+- El PDF muestra `(X%)` junto a "Comisión inmobiliaria" solo si `descuento_tipo === 'porcentaje'`
 
 ### PDFs con dos copias
-- **Recibo de pago** (`resources/views/pdf/recibo.blade.php`): dos copias en una hoja A4 separadas por línea de corte `✂ CORTE ✂`. Cada copia tiene etiqueta ORIGINAL / DUPLICADO.
+- **Recibo de pago** (`resources/views/pdf/recibo.blade.php`): dos copias en una hoja A4 separadas por línea de corte `✂ CORTE ✂`. Cada copia tiene etiqueta ORIGINAL / DUPLICADO. No muestra el propietario.
 - **Liquidación** (`resources/views/pdf/liquidacion.blade.php`): dos páginas separadas (`page-break-after: always`), cada una con etiqueta ORIGINAL / DUPLICADO.
 - Ambos PDFs muestran `$config->razon_social ?: $config->nombre` en el encabezado y firma.
 - El recibo recibe `$config` desde la closure en `routes/web.php`. La liquidación lo recibe desde `Liquidaciones::generarPdf()`.
@@ -181,6 +183,9 @@ Todas las migraciones en `database/migrations/` están aplicadas, incluyendo:
 - `2026_04_30_162656_add_comision_monto_to_contratos_table.php` (campo `comision_monto`)
 - `2026_04_30_164520_add_fotos_to_propiedades_table.php` (campo `fotos JSON`)
 - `2026_04_30_170139_make_propietario_id_nullable_in_propiedades_table.php` (`propietario_id` nullable en `propiedades`)
+- `2026_05_01_022406_add_cascade_delete_to_pagos_and_liquidaciones.php` (ON DELETE CASCADE en `pagos` y `liquidaciones`)
+- `2026_05_02_000001_add_valor_referencia_to_propiedades_table.php` (campo `valor_referencia` decimal nullable en `propiedades`)
+- `2026_05_05_210555_add_descuento_tipo_to_liquidaciones_table.php` (campo `descuento_tipo` string en `liquidaciones`, default `'porcentaje'`)
 
 ---
 
@@ -201,11 +206,44 @@ php artisan optimize:clear
 
 ## Notas de desarrollo
 
-- El proyecto usa `git` (inicializado). Commit inicial: `88b07a4`.
+- El proyecto usa `git`. Repositorio: `https://github.com/juanmazzola-cmyk/inmobiliariabidart.git`. Ramas: `main` (producción) y `demo`.
 - El entorno es Windows 10 con XAMPP. Los paths son `C:\xampp\htdocs\inmobiliaria\`.
-- Para abrir el proyecto: `http://localhost/inmobiliaria/public/`
-- La URL base en producción puede cambiar; los assets usan `asset()` y `storage/`.
+- Para abrir el proyecto localmente: `http://localhost/inmobiliaria/public/`
 - Las fotos de propiedades en alquiler se guardan en `storage/app/public/propiedades-alquiler/`.
 - Las fotos de propiedades en venta se guardan en `storage/app/public/propiedades-venta/`.
 - El logo de configuración se guarda en `storage/app/public/` (path guardado en `configuracion.logo_path`).
 - El backup de base de datos es un dump SQL puro generado en PHP (sin `mysqldump`), importable desde el mismo panel de Configuración.
+
+## Producción — DonWeb hosting compartido
+
+- **URL:** `https://inmobiliariabidart.proyectosia.com.ar`
+- **Plan:** DonWeb Plan 2 (sin SSH ni terminal)
+- **Estructura en servidor:**
+  - `public_html/inmobiliariabidart/` → raíz web del subdominio (contenido de `public/`)
+  - `public_html/inmobiliariabidart_app/` → aplicación Laravel completa
+- **`public/index.php` en servidor** tiene paths modificados apuntando a `/../inmobiliariabidart_app/`
+- **BD:** `c2761827_inmobid` (host: localhost)
+- **Deploy:** subir ZIPs via Administrador de Archivos del cPanel, extraer en su carpeta correspondiente
+- **Migraciones y caché en producción:** usar script `setup.php` temporal en `public_html/inmobiliariabidart/`
+- **Symlinks deshabilitados:** las fotos aún no funcionan en producción (pendiente resolución)
+- **`vendor/` generado localmente** con `composer install --no-dev --optimize-autoloader` e incluido en el ZIP
+
+### Pasos para actualizar producción
+1. Crear ZIP con archivos modificados (preservar estructura de carpetas)
+2. Subir y extraer en `public_html/inmobiliariabidart_app/`
+3. Si hay nuevas migraciones: subir `setup.php` a `public_html/inmobiliariabidart/`, ejecutarlo y borrarlo
+
+---
+
+## Acceso externo con ngrok
+
+Para exponer el proyecto via ngrok:
+1. Actualizar en `.env`:
+   ```
+   APP_URL=https://<subdominio>.ngrok-free.dev/inmobiliaria/public
+   ASSET_URL=https://<subdominio>.ngrok-free.dev/inmobiliaria/public
+   ```
+2. Correr `php artisan optimize:clear`
+3. En `bootstrap/app.php` ya está configurado `$middleware->trustProxies(at: '*')` para que Laravel detecte correctamente el scheme `https` desde los headers de ngrok.
+
+> La URL de ngrok gratuito cambia en cada reinicio del túnel — solo hay que actualizar las dos variables del `.env` y limpiar caché.

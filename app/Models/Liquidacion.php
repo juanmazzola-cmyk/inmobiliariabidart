@@ -19,6 +19,7 @@ class Liquidacion extends Model
         'fecha_liquidacion',
         'monto_alquiler',
         'comision_porcentaje',
+        'descuento_tipo',
         'monto_comision',
         'total_gastos',
         'monto_neto',

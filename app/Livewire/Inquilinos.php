@@ -101,6 +101,10 @@ class Inquilinos extends Component
     {
         $this->validate();
 
+        $this->nombre   = mb_convert_case(trim($this->nombre), MB_CASE_TITLE);
+        $this->apellido = mb_convert_case(trim($this->apellido), MB_CASE_TITLE);
+        $this->ocupacion = $this->ocupacion ? mb_convert_case(trim($this->ocupacion), MB_CASE_TITLE) : '';
+
         $data = [
             'nombre' => $this->nombre,
             'apellido' => $this->apellido,

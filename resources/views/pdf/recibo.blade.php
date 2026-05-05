@@ -99,9 +99,6 @@
             <div class="bloque-valor">
                 <strong>{{ $pago->contrato->propiedad->tipo_label }}</strong><br>
                 {{ $pago->contrato->propiedad->direccion_completa }}<br>
-                @if ($pago->contrato->propiedad->propietario)
-                    Propietario: {{ $pago->contrato->propiedad->propietario->nombre_completo }}
-                @endif
             </div>
         </div>
     </div>

@@ -189,7 +189,7 @@
                 </tr>
 
                 <tr>
-                    <td style="color:#dc2626;">Comisión inmobiliaria ({{ number_format($liquidacion->comision_porcentaje, 1) }}%)</td>
+                    <td style="color:#dc2626;">Comisión inmobiliaria @if($liquidacion->descuento_tipo !== 'valor')({{ number_format($liquidacion->comision_porcentaje, 1) }}%)@endif</td>
                     <td class="right" style="color:#dc2626;">- $ {{ number_format($liquidacion->monto_comision, 2, ',', '.') }}</td>
                 </tr>
 
@@ -212,7 +212,7 @@
             <div class="resumen-monto">- $ {{ number_format($liquidacion->total_gastos, 2, ',', '.') }}</div>
         </div>
         <div class="resumen-row deduccion">
-            <div class="resumen-concepto">Comisión inmobiliaria ({{ number_format($liquidacion->comision_porcentaje, 1) }}%)</div>
+            <div class="resumen-concepto">Comisión inmobiliaria @if($liquidacion->descuento_tipo !== 'valor')({{ number_format($liquidacion->comision_porcentaje, 1) }}%)@endif</div>
             <div class="resumen-monto">- $ {{ number_format($liquidacion->monto_comision, 2, ',', '.') }}</div>
         </div>
         <div class="resumen-row neto">

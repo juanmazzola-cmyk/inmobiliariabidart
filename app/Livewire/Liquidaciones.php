@@ -88,9 +88,9 @@ class Liquidaciones extends Component
 
         return view('livewire.liquidaciones', [
             'liquidaciones'      => $liquidaciones,
-            'totalPendientes'    => Liquidacion::whereIn('estado', ['borrador', 'emitida'])->count(),
+            'totalPendientes'    => Liquidacion::where('estado', 'emitida')->count(),
             'totalPagadas'       => Liquidacion::where('estado', 'pagada')->count(),
-            'montoPendiente'     => Liquidacion::whereIn('estado', ['borrador', 'emitida'])->sum('monto_neto'),
+            'montoPendiente'     => Liquidacion::where('estado', 'emitida')->sum('monto_neto'),
             'contratosActivos'   => Contrato::with(['propiedad.propietario', 'inquilino'])
                                         ->where('estado', 'activo')
                                         ->orderBy('id')
@@ -182,15 +182,16 @@ class Liquidaciones extends Component
             'fecha_liquidacion'   => now()->toDateString(),
             'monto_alquiler'      => $alquiler,
             'comision_porcentaje' => $comisionPct,
+            'descuento_tipo'      => $this->nuevaDescuentoTipo,
             'monto_comision'      => $montoComision,
             'total_gastos'        => $totalGastos,
             'monto_neto'          => $montoNeto,
-            'estado'              => 'borrador',
+            'estado'              => 'emitida',
             'observaciones'       => $this->nuevaObservaciones ?: null,
         ]);
 
         $this->modalNueva = false;
-        session()->flash('success', 'Liquidación creada en estado borrador.');
+        session()->flash('success', 'Liquidación creada correctamente.');
     }
 
     public function cerrarModalNueva(): void
@@ -233,11 +234,6 @@ class Liquidaciones extends Component
         session()->flash('success', 'Liquidación actualizada correctamente.');
     }
 
-    public function emitir(int $id): void
-    {
-        Liquidacion::findOrFail($id)->update(['estado' => 'emitida']);
-        session()->flash('success', 'Liquidación emitida.');
-    }
 
     // ── PDF ─────────────────────────────────────────────────────────────────
 

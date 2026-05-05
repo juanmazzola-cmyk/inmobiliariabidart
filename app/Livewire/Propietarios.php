@@ -37,14 +37,14 @@ class Propietarios extends Component
     protected $rules = [
         'nombre' => 'required|min:2',
         'apellido' => 'required|min:2',
-        'dni' => 'required|min:7',
+        'dni' => 'nullable|min:7',
         'email' => 'nullable|email',
     ];
 
     protected $messages = [
         'nombre.required' => 'El nombre es obligatorio.',
         'apellido.required' => 'El apellido es obligatorio.',
-        'dni.required' => 'El DNI es obligatorio.',
+        'dni.min' => 'El DNI debe tener al menos 7 caracteres.',
         'email.email' => 'El email no tiene formato válido.',
     ];
 
@@ -98,6 +98,9 @@ class Propietarios extends Component
     public function guardar(): void
     {
         $this->validate();
+
+        $this->nombre   = mb_convert_case(trim($this->nombre), MB_CASE_TITLE);
+        $this->apellido = mb_convert_case(trim($this->apellido), MB_CASE_TITLE);
 
         $data = [
             'nombre' => $this->nombre,
