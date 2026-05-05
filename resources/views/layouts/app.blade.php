@@ -51,7 +51,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                     </svg>
-                    Casas en alquiler
+                    Alquileres
                 </a>
 
                 <a href="{{ route('propiedades-venta.index') }}"
@@ -59,7 +59,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    Casas en venta
+                    En Venta
                 </a>
 
                 <a href="{{ route('contratos.index') }}"
@@ -74,65 +74,41 @@
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">Pagos</p>
                 </div>
 
-                {{-- Pagos — bloqueado demo --}}
-                <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 cursor-not-allowed select-none">
-                    <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('pagos.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('pagos.*') ? 'bg-slate-600 text-white' : 'text-slate-300 hover:bg-slate-700' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
-                    <span class="flex-1 opacity-50">Alquileres</span>
-                    <span class="flex items-center gap-1 text-xs text-slate-500">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        Próximamente
-                    </span>
-                </div>
+                    Alquileres
+                </a>
 
-                {{-- Gastos — bloqueado demo --}}
-                <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 cursor-not-allowed select-none">
-                    <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('gastos.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('gastos.*') ? 'bg-slate-600 text-white' : 'text-slate-300 hover:bg-slate-700' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21l-7-7-7 7M5 3a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 19V3z"/>
                     </svg>
-                    <span class="flex-1 opacity-50">Gastos</span>
-                    <span class="flex items-center gap-1 text-xs text-slate-500">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        Próximamente
-                    </span>
-                </div>
+                    Gastos
+                </a>
 
-                {{-- Liquidaciones — bloqueado demo --}}
-                <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 cursor-not-allowed select-none">
-                    <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('liquidaciones.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('liquidaciones.*') ? 'bg-slate-600 text-white' : 'text-slate-300 hover:bg-slate-700' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    <span class="flex-1 opacity-50">Propietarios</span>
-                    <span class="flex items-center gap-1 text-xs text-slate-500">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        Próximamente
-                    </span>
-                </div>
+                    Propietarios
+                </a>
 
                 <div class="pt-3 pb-1">
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">Reportes</p>
                 </div>
 
-                {{-- Reportes — bloqueado demo --}}
-                <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 cursor-not-allowed select-none">
-                    <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('reportes.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('reportes.*') ? 'bg-slate-600 text-white' : 'text-slate-300 hover:bg-slate-700' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
                     </svg>
-                    <span class="flex-1 opacity-50">Reportes</span>
-                    <span class="flex items-center gap-1 text-xs text-slate-500">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        Próximamente
-                    </span>
-                </div>
+                    Reportes
+                </a>
 
                 <div class="pt-3 pb-1">
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">Sistema</p>
