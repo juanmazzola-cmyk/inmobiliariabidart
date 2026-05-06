@@ -232,17 +232,18 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Recargo</label>
                         <input type="number" wire:model="recargo" step="0.01" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div>
+                    <div x-data="{ desc: {{ (float)$descuento }} }">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Descuento</label>
-                        <input type="number" wire:model.live="descuento" step="0.01" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        @if((float)$descuento > 0)
-                        <select wire:model="descuentoCategoria" class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Categoría del descuento</option>
-                            @foreach($categorias as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
-                            @endforeach
-                        </select>
-                        @endif
+                        <input type="number" wire:model="descuento" x-model="desc" step="0.01"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div x-show="desc > 0" x-cloak class="mt-2">
+                            <select wire:model="descuentoCategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Categoría del descuento</option>
+                                @foreach($categorias as $cat)
+                                    <option value="{{ $cat }}">{{ $cat }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
 
