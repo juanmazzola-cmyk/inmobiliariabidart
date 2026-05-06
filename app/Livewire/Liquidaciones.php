@@ -245,11 +245,13 @@ class Liquidaciones extends Component
             'contrato.inquilino',
         ])->findOrFail($id);
 
-        $gastos = Gasto::where('propiedad_id', $liquidacion->propiedad_id)
-            ->where('deducible', true)
-            ->whereMonth('fecha', $liquidacion->periodo_mes)
-            ->whereYear('fecha', $liquidacion->periodo_anio)
-            ->get();
+        $gastos = $liquidacion->gastos()->get();
+        if ($gastos->isEmpty()) {
+            $gastos = Gasto::where('propiedad_id', $liquidacion->propiedad_id)
+                ->whereMonth('fecha', $liquidacion->periodo_mes)
+                ->whereYear('fecha', $liquidacion->periodo_anio)
+                ->get();
+        }
 
         $config = \App\Models\Configuracion::get();
         $pdf = Pdf::loadView('pdf.liquidacion', compact('liquidacion', 'gastos', 'config'))

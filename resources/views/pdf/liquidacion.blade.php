@@ -121,7 +121,7 @@
         </div>
         @if($liquidacion->total_gastos > 0)
         <div class="resumen-row deduccion">
-            <div class="resumen-concepto">Gastos deducibles ({{ $gastos->count() }} ítem/s)</div>
+            <div class="resumen-concepto">Gastos deducibles{{ $gastos->count() > 0 ? ' ('.$gastos->count().' ítem/s)' : '' }}</div>
             <div class="resumen-monto">- $ {{ number_format($liquidacion->total_gastos, 2, ',', '.') }}</div>
         </div>
         @endif
