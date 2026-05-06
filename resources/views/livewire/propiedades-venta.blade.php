@@ -110,9 +110,6 @@
 
                         {{-- Atributos --}}
                         <div class="space-y-1 text-xs text-gray-500 mt-3">
-                            @if ($propiedad->propietario)
-                                <p>👤 <span class="text-gray-700">{{ $propiedad->propietario->nombre_completo }}</span></p>
-                            @endif
                             @if ($propiedad->superficie_total)
                                 <p>📐 {{ number_format($propiedad->superficie_total, 0) }} m²
                                     @if ($propiedad->ambientes) · {{ $propiedad->ambientes }} amb. @endif
