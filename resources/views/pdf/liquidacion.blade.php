@@ -119,9 +119,16 @@
             <div class="resumen-concepto">Alquiler cobrado</div>
             <div class="resumen-monto">$ {{ number_format($liquidacion->monto_alquiler, 2, ',', '.') }}</div>
         </div>
-        @if($liquidacion->total_gastos > 0)
+        @if($gastos->count() > 0)
+            @foreach($gastos as $gasto)
+            <div class="resumen-row deduccion">
+                <div class="resumen-concepto">{{ $gasto->categoria_label }} — {{ $gasto->concepto }}</div>
+                <div class="resumen-monto">- $ {{ number_format($gasto->monto, 2, ',', '.') }}</div>
+            </div>
+            @endforeach
+        @elseif($liquidacion->total_gastos > 0)
         <div class="resumen-row deduccion">
-            <div class="resumen-concepto">Gastos deducibles{{ $gastos->count() > 0 ? ' ('.$gastos->count().' ítem/s)' : '' }}</div>
+            <div class="resumen-concepto">Gastos deducibles</div>
             <div class="resumen-monto">- $ {{ number_format($liquidacion->total_gastos, 2, ',', '.') }}</div>
         </div>
         @endif
@@ -135,36 +142,6 @@
         </div>
     </div>
 
-    {{-- GASTOS DETALLE --}}
-    @if($gastos->count() > 0)
-    <div style="margin-bottom:6px;">
-        <div class="section-title">Gastos Deducibles</div>
-        <table class="detalle">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Categoría — Concepto</th>
-                    <th>Proveedor</th>
-                    <th class="right">Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($gastos as $gasto)
-                <tr>
-                    <td>{{ $gasto->fecha->format('d/m/Y') }}</td>
-                    <td>{{ $gasto->categoria_label }} — {{ $gasto->concepto }}</td>
-                    <td>{{ $gasto->proveedor ?? '—' }}</td>
-                    <td class="right">$ {{ number_format($gasto->monto, 2, ',', '.') }}</td>
-                </tr>
-                @endforeach
-                <tr class="subtotal">
-                    <td colspan="3">Total gastos</td>
-                    <td class="right">$ {{ number_format($gastos->sum('monto'), 2, ',', '.') }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    @endif
 
     {{-- OBSERVACIONES --}}
     @if($liquidacion->observaciones)
