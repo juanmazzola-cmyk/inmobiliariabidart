@@ -61,7 +61,7 @@
                             <td class="px-4 py-3">
                                 <p class="font-medium text-gray-900 text-xs">{{ $c->propiedad->tipo_label }}</p>
                                 <p class="text-xs text-gray-600">{{ $c->propiedad->direccion_completa }}</p>
-                                <p class="text-xs text-gray-400">{{ $c->propiedad->propietario->nombre_completo }}</p>
+                                <p class="text-xs text-gray-400">{{ $c->propiedad->propietario?->nombre_completo ?? '—' }}</p>
                             </td>
                             <td class="px-4 py-3">
                                 <p class="font-medium text-gray-900">{{ $c->inquilino->nombre_completo }}</p>
@@ -282,14 +282,14 @@
                                 @foreach ($propiedadesDisponibles as $prop)
                                     <option value="{{ $prop->id }}">
                                         {{ $prop->tipo_label }} — {{ $prop->direccion_completa }}
-                                        ({{ $prop->propietario->apellido }})
+                                        @if($prop->propietario)({{ $prop->propietario->apellido }})@endif
                                     </option>
                                 @endforeach
                             </select>
                             @error('propiedadId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
 
                             {{-- Propietario del inmueble --}}
-                            @if ($propiedadSeleccionada)
+                            @if ($propiedadSeleccionada && $propiedadSeleccionada->propietario)
                                 <div class="mt-2 px-3 py-2 bg-blue-50 rounded-lg text-xs text-blue-700">
                                     <span class="font-semibold">Propietario:</span>
                                     {{ $propiedadSeleccionada->propietario->nombre_completo }}
