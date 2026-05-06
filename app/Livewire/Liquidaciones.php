@@ -80,15 +80,15 @@ class Liquidaciones extends Component
         // Calcular monto neto preview para modal nueva
         $nuevaMontoComision = 0;
         $nuevaMontoNeto     = 0;
+        $totalGastosPreview = collect($this->nuevosGastos)->sum('monto');
         if ($this->modalNueva && $this->nuevaMontoAlquiler) {
             $alquiler = (float) $this->nuevaMontoAlquiler;
-            $gastos   = (float) $this->nuevaTotalGastos;
             if ($this->nuevaDescuentoTipo === 'valor') {
                 $nuevaMontoComision = (float) $this->nuevaDescuentoValorFijo;
             } else {
                 $nuevaMontoComision = round($alquiler * (float) $this->nuevaComisionPorcentaje / 100, 2);
             }
-            $nuevaMontoNeto = round($alquiler - $nuevaMontoComision - $gastos, 2);
+            $nuevaMontoNeto = round($alquiler - $nuevaMontoComision - $totalGastosPreview, 2);
         }
 
         return view('livewire.liquidaciones', [
@@ -100,9 +100,10 @@ class Liquidaciones extends Component
                                         ->where('estado', 'activo')
                                         ->orderBy('id')
                                         ->get(),
-            'nuevaMontoComision' => $nuevaMontoComision,
-            'nuevaMontoNeto'     => $nuevaMontoNeto,
-            'categorias'         => \App\Models\CategoriaGasto::orderBy('nombre')->pluck('nombre'),
+            'nuevaMontoComision'  => $nuevaMontoComision,
+            'nuevaMontoNeto'      => $nuevaMontoNeto,
+            'totalGastosPreview'  => $totalGastosPreview,
+            'categorias'          => \App\Models\CategoriaGasto::orderBy('nombre')->pluck('nombre'),
         ]);
     }
 
