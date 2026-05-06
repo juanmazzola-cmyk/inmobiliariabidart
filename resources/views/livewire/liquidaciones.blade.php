@@ -286,11 +286,41 @@
                         @endif
                     </div>
 
+                    {{-- Gastos deducibles --}}
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Total gastos deducibles</label>
-                        <input wire:model.live="nuevaTotalGastos" type="number" step="0.01" min="0"
-                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <p class="text-xs text-gray-400 mt-0.5">Gastos del mes que se descuentan al propietario</p>
+                        <label class="block text-xs font-medium text-gray-600 mb-2">Gastos deducibles</label>
+
+                        {{-- Lista de gastos agregados --}}
+                        @if(count($nuevosGastos) > 0)
+                        <div class="mb-2 space-y-1">
+                            @foreach($nuevosGastos as $i => $g)
+                            <div class="flex items-center justify-between bg-red-50 border border-red-100 rounded-lg px-3 py-1.5 text-xs">
+                                <span class="text-gray-700">{{ $g['categoria'] }}</span>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-medium text-red-600">- $ {{ number_format($g['monto'], 0, ',', '.') }}</span>
+                                    <button type="button" wire:click="quitarGasto({{ $i }})" class="text-gray-400 hover:text-red-500 font-bold leading-none">×</button>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+
+                        {{-- Fila para agregar gasto --}}
+                        <div class="flex gap-2">
+                            <select wire:model="gastoCategoria"
+                                class="flex-1 border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Categoría</option>
+                                @foreach($categorias as $cat)
+                                    <option value="{{ $cat }}">{{ $cat }}</option>
+                                @endforeach
+                            </select>
+                            <input wire:model.blur="gastoMonto" type="text" placeholder="Monto"
+                                class="w-28 border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="button" wire:click="agregarGasto"
+                                class="px-3 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap">
+                                + Agregar
+                            </button>
+                        </div>
                     </div>
 
                     {{-- Resumen calculado --}}
@@ -309,12 +339,12 @@
                                     <span>- {{ $nuevaDescuentoMoneda === 'USD' ? 'U$S' : '$' }} {{ number_format($nuevaMontoComision, 0, ',', '.') }}</span>
                                 @endif
                             </div>
-                            @if ((float)$nuevaTotalGastos > 0)
+                            @foreach($nuevosGastos as $g)
                             <div class="flex justify-between text-red-600">
-                                <span>Gastos</span>
-                                <span>- $ {{ number_format((float)$nuevaTotalGastos, 0, ',', '.') }}</span>
+                                <span>{{ $g['categoria'] }}</span>
+                                <span>- $ {{ number_format($g['monto'], 0, ',', '.') }}</span>
                             </div>
-                            @endif
+                            @endforeach
                             <div class="flex justify-between font-bold text-blue-700 border-t border-blue-200 pt-2">
                                 <span>Monto neto al propietario</span>
                                 <span>$ {{ number_format($nuevaMontoNeto, 0, ',', '.') }}</span>

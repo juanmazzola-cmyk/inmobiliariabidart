@@ -43,11 +43,16 @@ class Liquidaciones extends Component
     public int $nuevaAnio = 0;
     public string $nuevaMontoAlquiler      = '';
     public string $nuevaComisionPorcentaje = '';
-    public string $nuevaDescuentoTipo      = 'porcentaje'; // 'porcentaje' | 'valor'
+    public string $nuevaDescuentoTipo      = 'porcentaje';
     public string $nuevaDescuentoValorFijo = '';
     public string $nuevaDescuentoMoneda    = 'ARS';
     public string $nuevaTotalGastos        = '0';
     public string $nuevaObservaciones      = '';
+
+    // Gastos de la liquidación
+    public array  $nuevosGastos    = [];
+    public string $gastoCategoria  = '';
+    public string $gastoMonto      = '';
 
     public function updatingBusqueda(): void
     {
@@ -97,7 +102,33 @@ class Liquidaciones extends Component
                                         ->get(),
             'nuevaMontoComision' => $nuevaMontoComision,
             'nuevaMontoNeto'     => $nuevaMontoNeto,
+            'categorias'         => \App\Models\CategoriaGasto::orderBy('nombre')->pluck('nombre'),
         ]);
+    }
+
+    // ── Gastos de la liquidación ────────────────────────────────────────────
+
+    public function agregarGasto(): void
+    {
+        if (!$this->gastoCategoria || !$this->gastoMonto) return;
+        $monto = (float) str_replace('.', '', $this->gastoMonto);
+        if ($monto <= 0) return;
+        $this->nuevosGastos[] = ['categoria' => $this->gastoCategoria, 'monto' => $monto];
+        $this->gastoCategoria = '';
+        $this->gastoMonto     = '';
+        $this->nuevaTotalGastos = (string) collect($this->nuevosGastos)->sum('monto');
+    }
+
+    public function quitarGasto(int $index): void
+    {
+        array_splice($this->nuevosGastos, $index, 1);
+        $this->nuevaTotalGastos = (string) collect($this->nuevosGastos)->sum('monto');
+    }
+
+    public function updatedGastoMonto(): void
+    {
+        $raw = preg_replace('/[^\d]/', '', $this->gastoMonto);
+        $this->gastoMonto = $raw ? number_format((int) $raw, 0, ',', '.') : '';
     }
 
     // ── Modal nueva liquidación ─────────────────────────────────────────────
@@ -190,12 +221,18 @@ class Liquidaciones extends Component
             'observaciones'       => $this->nuevaObservaciones ?: null,
         ]);
 
-        // Vincular gastos de esa propiedad al período de la liquidación
-        Gasto::where('propiedad_id', $contrato->propiedad_id)
-            ->whereNull('liquidacion_id')
-            ->whereMonth('fecha', $this->nuevaMes)
-            ->whereYear('fecha', $this->nuevaAnio)
-            ->update(['liquidacion_id' => $liquidacion->id]);
+        // Crear registros de Gasto para cada ítem ingresado
+        foreach ($this->nuevosGastos as $g) {
+            Gasto::create([
+                'propiedad_id'   => $contrato->propiedad_id,
+                'liquidacion_id' => $liquidacion->id,
+                'categoria'      => $g['categoria'],
+                'concepto'       => $g['categoria'],
+                'monto'          => $g['monto'],
+                'fecha'          => now()->startOfMonth()->setMonth($this->nuevaMes)->setYear($this->nuevaAnio)->toDateString(),
+                'deducible'      => true,
+            ]);
+        }
 
         $this->modalNueva = false;
         session()->flash('success', 'Liquidación creada correctamente.');
@@ -203,7 +240,11 @@ class Liquidaciones extends Component
 
     public function cerrarModalNueva(): void
     {
-        $this->modalNueva = false;
+        $this->modalNueva    = false;
+        $this->nuevosGastos  = [];
+        $this->gastoCategoria = '';
+        $this->gastoMonto    = '';
+        $this->nuevaTotalGastos = '0';
         $this->resetValidation();
     }
 
