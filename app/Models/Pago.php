@@ -16,6 +16,7 @@ class Pago extends Model
         'monto',
         'recargo',
         'descuento',
+        'descuento_categoria',
         'total',
         'medio_pago',
         'numero_comprobante',

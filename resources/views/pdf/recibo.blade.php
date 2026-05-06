@@ -137,7 +137,7 @@
         @endif
         @if ($pago->descuento > 0)
         <tr>
-            <td class="concepto">Descuento aplicado</td>
+            <td class="concepto">Descuento{{ $pago->descuento_categoria ? ' — ' . $pago->descuento_categoria : '' }}</td>
             <td class="importe" style="color:#16a34a;">- $ {{ number_format($pago->descuento, 2, ',', '.') }}</td>
         </tr>
         @endif

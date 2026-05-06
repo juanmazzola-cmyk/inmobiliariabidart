@@ -39,6 +39,7 @@ class Pagos extends Component
     public string $monto = '';
     public string $recargo = '0';
     public string $descuento = '0';
+    public string $descuentoCategoria = '';
     public string $medioPago = 'efectivo';
     public string $numeroComprobante = '';
     public string $estado = 'pagado';
@@ -105,6 +106,7 @@ class Pagos extends Component
             'totalPendiente' => $totalPendiente,
             'totalVencido'   => $totalVencido,
             'contratos'      => Contrato::with(['propiedad', 'inquilino'])->where('estado', 'activo')->get(),
+            'categorias'     => \App\Models\CategoriaGasto::orderBy('nombre')->pluck('nombre'),
         ]);
     }
 
@@ -113,9 +115,10 @@ class Pagos extends Component
         $this->pagoId          = null;
         $this->contratoId      = null;
         $this->monto           = '';
-        $this->recargo         = '0';
-        $this->descuento       = '0';
-        $this->medioPago       = 'efectivo';
+        $this->recargo             = '0';
+        $this->descuento           = '0';
+        $this->descuentoCategoria  = '';
+        $this->medioPago           = 'efectivo';
         $this->estado          = 'pagado';
         $this->numeroComprobante = '';
         $this->observaciones   = '';
@@ -138,8 +141,9 @@ class Pagos extends Component
         $this->fechaPago        = now()->format('Y-m-d');
         $this->monto            = $pago->monto;
         $this->recargo          = $pago->recargo ?? '0';
-        $this->descuento        = $pago->descuento ?? '0';
-        $this->medioPago        = 'efectivo';
+        $this->descuento           = $pago->descuento ?? '0';
+        $this->descuentoCategoria  = $pago->descuento_categoria ?? '';
+        $this->medioPago           = 'efectivo';
         $this->estado           = 'pagado';
         $this->numeroComprobante = '';
         $this->observaciones    = $pago->observaciones ?? '';
@@ -174,8 +178,9 @@ class Pagos extends Component
             'periodo_anio'      => $this->periodoAnio,
             'monto'             => $monto,
             'recargo'           => $recargo,
-            'descuento'         => $descuento,
-            'total'             => $total,
+            'descuento'           => $descuento,
+            'descuento_categoria' => $descuento > 0 ? ($this->descuentoCategoria ?: null) : null,
+            'total'               => $total,
             'medio_pago'        => $this->medioPago,
             'numero_comprobante'=> $this->numeroComprobante ?: null,
             'estado'            => $this->estado,
