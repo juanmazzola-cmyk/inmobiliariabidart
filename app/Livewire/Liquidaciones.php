@@ -111,9 +111,8 @@ class Liquidaciones extends Component
 
     public function agregarGasto(): void
     {
-        if (!$this->gastoCategoria || !$this->gastoMonto) return;
-        $monto = (float) str_replace('.', '', $this->gastoMonto);
-        if ($monto <= 0) return;
+        $monto = (float) $this->gastoMonto;
+        if (!$this->gastoCategoria || $monto <= 0) return;
         $this->nuevosGastos[] = ['categoria' => $this->gastoCategoria, 'monto' => $monto];
         $this->gastoCategoria = '';
         $this->gastoMonto     = '';
@@ -124,12 +123,6 @@ class Liquidaciones extends Component
     {
         array_splice($this->nuevosGastos, $index, 1);
         $this->nuevaTotalGastos = (string) collect($this->nuevosGastos)->sum('monto');
-    }
-
-    public function updatedGastoMonto(): void
-    {
-        $raw = preg_replace('/[^\d]/', '', $this->gastoMonto);
-        $this->gastoMonto = $raw ? number_format((int) $raw, 0, ',', '.') : '';
     }
 
     // ── Modal nueva liquidación ─────────────────────────────────────────────

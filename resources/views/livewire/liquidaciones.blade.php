@@ -314,7 +314,7 @@
                                     <option value="{{ $cat }}">{{ $cat }}</option>
                                 @endforeach
                             </select>
-                            <input wire:model.live="gastoMonto" type="text" placeholder="Monto"
+                            <input wire:model="gastoMonto" type="number" min="0" step="1" placeholder="Monto"
                                 class="w-28 border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <button type="button" wire:click="agregarGasto"
                                 class="px-3 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap">
