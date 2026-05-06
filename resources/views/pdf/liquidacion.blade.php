@@ -122,7 +122,7 @@
         @if($gastos->count() > 0)
             @foreach($gastos as $gasto)
             <div class="resumen-row deduccion">
-                <div class="resumen-concepto">{{ $gasto->categoria_label }} — {{ $gasto->concepto }}</div>
+                <div class="resumen-concepto">Gastos deducibles — {{ $gasto->categoria_label }}</div>
                 <div class="resumen-monto">- $ {{ number_format($gasto->monto, 2, ',', '.') }}</div>
             </div>
             @endforeach
