@@ -173,7 +173,7 @@ class Liquidaciones extends Component
             return;
         }
 
-        Liquidacion::create([
+        $liquidacion = Liquidacion::create([
             'propietario_id'      => $contrato->propiedad->propietario_id,
             'propiedad_id'        => $contrato->propiedad_id,
             'contrato_id'         => $this->nuevaContratoId,
@@ -189,6 +189,13 @@ class Liquidaciones extends Component
             'estado'              => 'emitida',
             'observaciones'       => $this->nuevaObservaciones ?: null,
         ]);
+
+        // Vincular gastos de esa propiedad al período de la liquidación
+        Gasto::where('propiedad_id', $contrato->propiedad_id)
+            ->whereNull('liquidacion_id')
+            ->whereMonth('fecha', $this->nuevaMes)
+            ->whereYear('fecha', $this->nuevaAnio)
+            ->update(['liquidacion_id' => $liquidacion->id]);
 
         $this->modalNueva = false;
         session()->flash('success', 'Liquidación creada correctamente.');
@@ -250,6 +257,13 @@ class Liquidaciones extends Component
             $gastos = Gasto::where('propiedad_id', $liquidacion->propiedad_id)
                 ->whereMonth('fecha', $liquidacion->periodo_mes)
                 ->whereYear('fecha', $liquidacion->periodo_anio)
+                ->get();
+        }
+        // Si sigue vacío pero hay total_gastos, buscar sin filtro de fecha
+        if ($gastos->isEmpty() && $liquidacion->total_gastos > 0) {
+            $gastos = Gasto::where('propiedad_id', $liquidacion->propiedad_id)
+                ->whereNull('liquidacion_id')
+                ->orderByDesc('fecha')
                 ->get();
         }
 
