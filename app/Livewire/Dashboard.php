@@ -41,9 +41,14 @@ class Dashboard extends Component
             ->where('periodo_anio', $anioActual)
             ->sum('total');
 
-        $pagosPendientes = Pago::where('estado', 'pendiente')->count();
-        $pagosVencidos = Pago::where('estado', 'vencido')->count();
-        $montoPendiente = Pago::whereIn('estado', ['pendiente', 'vencido'])->sum('total');
+        $pagosPendientesMes = Pago::whereIn('estado', ['pendiente', 'vencido'])
+            ->where('periodo_mes', $mesActual)
+            ->where('periodo_anio', $anioActual)
+            ->count();
+        $montoPendienteMes = Pago::whereIn('estado', ['pendiente', 'vencido'])
+            ->where('periodo_mes', $mesActual)
+            ->where('periodo_anio', $anioActual)
+            ->sum('total');
 
         $alquileresVencidos = Pago::with(['contrato.propiedad', 'contrato.inquilino'])
             ->where('estado', 'vencido')
@@ -72,9 +77,8 @@ class Dashboard extends Component
             'contratosActivos',
             'contratosVencer',
             'cobranzaMes',
-            'pagosPendientes',
-            'pagosVencidos',
-            'montoPendiente',
+            'pagosPendientesMes',
+            'montoPendienteMes',
             'contratosProximoVencer',
         ));
     }

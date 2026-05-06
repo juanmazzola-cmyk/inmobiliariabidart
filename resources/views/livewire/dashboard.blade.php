@@ -48,10 +48,7 @@
                 <div>
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">En Venta</p>
                     <p class="text-2xl font-bold text-indigo-600 mt-1">{{ $ventaDisponibles }}</p>
-                    <p class="text-xs text-gray-400 mt-1">
-                        {{ $ventaReservadas }} reservadas
-                        @if($ventaValor > 0) · U$S {{ number_format($ventaValor/1000, 0, ',', '.')}}K @endif
-                    </p>
+                    <p class="text-xs text-gray-400 mt-1">{{ $ventaReservadas }} reservadas</p>
                 </div>
                 <div class="bg-indigo-100 p-2 rounded-xl shrink-0">
                     <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,9 +98,9 @@
         <a href="{{ route('pagos.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-red-200 transition-all">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saldo Pendiente</p>
-                    <p class="text-3xl font-bold text-red-600 mt-2">$ {{ number_format($montoPendiente, 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ $pagosPendientes }} pendientes · {{ $pagosVencidos }} vencidos</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saldo Pendiente del Mes</p>
+                    <p class="text-3xl font-bold text-red-600 mt-2">$ {{ number_format($montoPendienteMes, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ $pagosPendientesMes }} sin cobrar · {{ now()->isoFormat('MMMM YYYY') }}</p>
                 </div>
                 <div class="bg-red-100 p-3 rounded-xl shrink-0">
                     <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
