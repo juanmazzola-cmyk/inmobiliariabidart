@@ -31,6 +31,14 @@
             <option value="rescindido">Rescindido</option>
             <option value="renovado">Renovado</option>
         </select>
+        <button wire:click="ejecutarIncrementos" wire:loading.attr="disabled"
+            class="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+            <span wire:loading.remove wire:target="ejecutarIncrementos">Aplicar Incrementos</span>
+            <span wire:loading wire:target="ejecutarIncrementos">Procesando...</span>
+        </button>
         <button wire:click="nuevo"
             class="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

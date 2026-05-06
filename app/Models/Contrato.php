@@ -34,8 +34,9 @@ class Contrato extends Model
         'comision_porcentaje' => 'decimal:2',
         'comision_monto'      => 'decimal:2',
         'deposito_garantia'   => 'decimal:2',
-        'incremento_automatico' => 'boolean',
-        'porcentaje_incremento' => 'decimal:2',
+        'incremento_automatico'  => 'boolean',
+        'porcentaje_incremento'  => 'decimal:2',
+        'ultimo_incremento_at'   => 'date',
     ];
 
     public function propiedad(): BelongsTo

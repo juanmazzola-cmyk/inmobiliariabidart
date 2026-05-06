@@ -7,6 +7,7 @@ use App\Models\Inquilino;
 use App\Models\Pago;
 use App\Models\Propiedad;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -343,6 +344,13 @@ class Contratos extends Component
         $this->modalAbrir = false;
         $this->resetValidation();
         $this->resetForm();
+    }
+
+    public function ejecutarIncrementos(): void
+    {
+        Artisan::call('contratos:incrementar');
+        $output = trim(Artisan::output());
+        session()->flash('success', $output ?: 'Incrementos procesados.');
     }
 
     private function generarCuotasMensuales(Contrato $contrato): void
