@@ -89,7 +89,12 @@ class Pagos extends Component
             ->when($this->filtroAnio, fn($q) => $q->where('periodo_anio', $this->filtroAnio))
             ->sum('total');
 
-        $totalPendiente = Pago::whereIn('estado', ['pendiente', 'vencido'])
+        $totalPendiente = Pago::where('estado', 'pendiente')
+            ->when($this->filtroMes,  fn($q) => $q->where('periodo_mes', $this->filtroMes))
+            ->when($this->filtroAnio, fn($q) => $q->where('periodo_anio', $this->filtroAnio))
+            ->sum('total');
+
+        $totalVencido = Pago::where('estado', 'vencido')
             ->when($this->filtroMes,  fn($q) => $q->where('periodo_mes', $this->filtroMes))
             ->when($this->filtroAnio, fn($q) => $q->where('periodo_anio', $this->filtroAnio))
             ->sum('total');
@@ -98,6 +103,7 @@ class Pagos extends Component
             'pagos'          => $pagos,
             'totalCobrado'   => $totalCobrado,
             'totalPendiente' => $totalPendiente,
+            'totalVencido'   => $totalVencido,
             'contratos'      => Contrato::with(['propiedad', 'inquilino'])->where('estado', 'activo')->get(),
         ]);
     }

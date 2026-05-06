@@ -6,8 +6,17 @@
             <p class="text-2xl font-bold text-green-600 mt-1">$ {{ number_format($totalCobrado, 0, ',', '.') }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pendiente / Vencido</p>
-            <p class="text-2xl font-bold text-red-600 mt-1">$ {{ number_format($totalPendiente, 0, ',', '.') }}</p>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pendiente / Vencido</p>
+            <div class="flex gap-4">
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide">Pendiente</p>
+                    <p class="text-xl font-bold text-yellow-600">$ {{ number_format($totalPendiente, 0, ',', '.') }}</p>
+                </div>
+                <div class="border-l border-gray-100 pl-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wide">Vencido</p>
+                    <p class="text-xl font-bold text-red-600">$ {{ number_format($totalVencido, 0, ',', '.') }}</p>
+                </div>
+            </div>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Filtro activo</p>
