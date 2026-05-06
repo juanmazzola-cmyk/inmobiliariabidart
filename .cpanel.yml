@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - /usr/local/bin/php $HOME/public_html/inmobiliariabidart_app/artisan migrate --force
+    - /usr/local/bin/php $HOME/public_html/inmobiliariabidart_app/artisan optimize:clear

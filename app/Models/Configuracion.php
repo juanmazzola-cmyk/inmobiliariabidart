@@ -17,6 +17,8 @@ class Configuracion extends Model
         'email',
         'sitio_web',
         'logo_path',
+        'login_usuario',
+        'login_whatsapp',
     ];
 
     public static function get(): self

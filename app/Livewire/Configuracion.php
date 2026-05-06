@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Models\CategoriaGasto;
 use App\Models\Configuracion as ConfiguracionModel;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -16,21 +18,27 @@ class Configuracion extends Component
 {
     use WithFileUploads;
 
-    public string $razonSocial  = '';
-    public string $cuit         = '';
-    public string $direccion    = '';
-    public string $telefono     = '';
-    public string $email        = '';
-    public ?string $logoActual  = null;
-    public $nuevoLogo           = null;
-    public $archivoBackup       = null;
+    public string $razonSocial    = '';
+    public string $cuit           = '';
+    public string $direccion      = '';
+    public string $telefono       = '';
+    public string $email          = '';
+    public ?string $logoActual    = null;
+    public $nuevoLogo             = null;
+    public string $loginUsuario      = '';
+    public string $loginPassword     = '';
+    public string $loginWhatsapp     = '';
+
+    public string $nuevaCategoria    = '';
 
     protected function rules(): array
     {
         return [
             'email'         => 'nullable|email',
             'nuevoLogo'     => 'nullable|image|max:2048',
-            'archivoBackup' => 'nullable|file|max:51200',
+            'loginUsuario'  => 'required|min:3',
+            'loginPassword' => 'nullable|min:4',
+            'loginWhatsapp' => 'nullable',
         ];
     }
 
@@ -38,19 +46,22 @@ class Configuracion extends Component
         'email.email'            => 'El email no tiene formato válido.',
         'nuevoLogo.image'        => 'El logo debe ser una imagen.',
         'nuevoLogo.max'          => 'El logo no puede superar 2 MB.',
-        'archivoBackup.file'     => 'El archivo no es válido.',
-        'archivoBackup.max'      => 'El archivo no puede superar 50 MB.',
+        'loginUsuario.required'  => 'El usuario es obligatorio.',
+        'loginUsuario.min'       => 'El usuario debe tener al menos 3 caracteres.',
+        'loginPassword.min'      => 'La contraseña debe tener al menos 4 caracteres.',
     ];
 
     public function mount(): void
     {
         $config = ConfiguracionModel::get();
-        $this->razonSocial = $config->razon_social ?? '';
-        $this->cuit        = $config->cuit ?? '';
-        $this->direccion   = $config->direccion ?? '';
-        $this->telefono    = $config->telefono ?? '';
-        $this->email       = $config->email ?? '';
-        $this->logoActual  = $config->logo_path;
+        $this->razonSocial    = $config->razon_social ?? '';
+        $this->cuit           = $config->cuit ?? '';
+        $this->direccion      = $config->direccion ?? '';
+        $this->telefono       = $config->telefono ?? '';
+        $this->email          = $config->email ?? '';
+        $this->logoActual     = $config->logo_path;
+        $this->loginUsuario   = $config->login_usuario ?? 'admin';
+        $this->loginWhatsapp  = $config->login_whatsapp ?? '';
     }
 
     public function guardar(): void
@@ -72,13 +83,26 @@ class Configuracion extends Component
         }
 
         $config->update([
-            'razon_social'=> $this->razonSocial ?: null,
-            'cuit'        => $this->cuit ?: null,
-            'direccion'   => $this->direccion ?: null,
-            'telefono'    => $this->telefono ?: null,
-            'email'       => $this->email ?: null,
-            'logo_path'   => $logoPath,
+            'razon_social'   => $this->razonSocial ?: null,
+            'cuit'           => $this->cuit ?: null,
+            'direccion'      => $this->direccion ?: null,
+            'telefono'       => $this->telefono ?: null,
+            'email'          => $this->email ?: null,
+            'logo_path'      => $logoPath,
+            'login_usuario'  => $this->loginUsuario,
+            'login_whatsapp' => $this->loginWhatsapp ?: null,
         ]);
+
+        // Actualizar usuario del sistema
+        $user = User::first();
+        if ($user) {
+            $userData = ['name' => $this->loginUsuario];
+            if ($this->loginPassword) {
+                $userData['password'] = Hash::make($this->loginPassword);
+                $this->loginPassword  = '';
+            }
+            $user->update($userData);
+        }
 
         session()->flash('success', 'Configuración guardada correctamente.');
     }
@@ -93,86 +117,27 @@ class Configuracion extends Component
         }
     }
 
-    public function importarBackup(): void
+    public function agregarCategoria(): void
     {
-        $this->validate(['archivoBackup' => 'required|file|max:51200']);
+        $this->validate(['nuevaCategoria' => 'required|min:2|unique:categorias_gastos,nombre'], [
+            'nuevaCategoria.required' => 'Ingresá un nombre.',
+            'nuevaCategoria.min'      => 'Mínimo 2 caracteres.',
+            'nuevaCategoria.unique'   => 'Esa categoría ya existe.',
+        ]);
 
-        $ext = strtolower($this->archivoBackup->getClientOriginalExtension());
-        if (!in_array($ext, ['sql', 'txt'])) {
-            $this->addError('archivoBackup', 'El archivo debe tener extensión .sql o .txt');
-            return;
-        }
-
-        $sql = file_get_contents($this->archivoBackup->getRealPath());
-        $statements = $this->parseSql($sql);
-
-        DB::beginTransaction();
-        try {
-            foreach ($statements as $stmt) {
-                DB::unprepared($stmt);
-            }
-            DB::commit();
-            $this->archivoBackup = null;
-            session()->flash('success', 'Backup importado correctamente. La base de datos fue restaurada.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            session()->flash('error', 'Error al importar el backup: ' . $e->getMessage());
-        }
+        CategoriaGasto::create(['nombre' => mb_convert_case(trim($this->nuevaCategoria), MB_CASE_TITLE)]);
+        $this->nuevaCategoria = '';
     }
 
-    private function parseSql(string $sql): array
+    public function eliminarCategoria(int $id): void
     {
-        $statements = [];
-        $current    = '';
-        $inString   = false;
-        $strChar    = '';
-        $i          = 0;
-        $len        = strlen($sql);
-
-        while ($i < $len) {
-            $c = $sql[$i];
-
-            if ($inString) {
-                $current .= $c;
-                if ($c === '\\') {
-                    $i++;
-                    if ($i < $len) $current .= $sql[$i];
-                } elseif ($c === $strChar) {
-                    $inString = false;
-                }
-            } else {
-                if ($c === "'" || $c === '"') {
-                    $inString = true;
-                    $strChar  = $c;
-                    $current .= $c;
-                } elseif ($c === '-' && ($i + 1 < $len) && $sql[$i + 1] === '-') {
-                    while ($i < $len && $sql[$i] !== "\n") $i++;
-                    $i++;
-                    continue;
-                } elseif ($c === '/' && ($i + 1 < $len) && $sql[$i + 1] === '*') {
-                    $i += 2;
-                    while ($i < $len && !($sql[$i] === '*' && ($i + 1 < $len) && $sql[$i + 1] === '/')) $i++;
-                    $i += 2;
-                    continue;
-                } elseif ($c === ';') {
-                    $stmt = trim($current);
-                    if ($stmt !== '') $statements[] = $stmt;
-                    $current = '';
-                } else {
-                    $current .= $c;
-                }
-            }
-            $i++;
-        }
-
-        $stmt = trim($current);
-        if ($stmt !== '') $statements[] = $stmt;
-
-        return $statements;
+        CategoriaGasto::findOrFail($id)->delete();
     }
 
     public function render()
     {
-        return view('livewire.configuracion');
+        return view('livewire.configuracion', [
+            'categorias' => CategoriaGasto::orderBy('nombre')->get(),
+        ]);
     }
 }

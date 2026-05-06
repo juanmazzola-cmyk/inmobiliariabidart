@@ -39,61 +39,6 @@
         </div>
     </div>
 
-    {{-- ── Sección 1: Cobranza mensual ─────────────────────────────────────── --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="font-semibold text-gray-800">Cuotas cobradas por período — {{ $anio }}</h3>
-            <a href="{{ route('pagos.index') }}" class="text-xs text-blue-600 hover:underline">Ver listado completo →</a>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    <tr>
-                        <th class="px-4 py-3 text-left">Mes</th>
-                        <th class="px-4 py-3 text-right">Cobrado</th>
-                        <th class="px-4 py-3 text-right">Pendiente / Vencido</th>
-                        <th class="px-4 py-3 text-left w-48">Proporción</th>
-                        <th class="px-4 py-3 text-right">% Cobrado</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    @foreach($cobranzaMensual as $row)
-                    @php
-                        $total = $row['cobrado'] + $row['pendiente'];
-                        $pct   = $total > 0 ? round($row['cobrado'] / $total * 100) : 0;
-                        $esHoy = $row['mes'] === now()->month && $anio === now()->year;
-                    @endphp
-                    <tr class="{{ $esHoy ? 'bg-blue-50' : 'hover:bg-gray-50' }} transition-colors">
-                        <td class="px-4 py-3 font-medium text-gray-800">
-                            {{ $row['nombre'] }}
-                            @if ($esHoy) <span class="ml-1 text-xs text-blue-500 font-normal">(actual)</span> @endif
-                        </td>
-                        <td class="px-4 py-3 text-right font-semibold {{ $row['cobrado'] > 0 ? 'text-green-600' : 'text-gray-300' }}">
-                            {{ $row['cobrado'] > 0 ? '$ ' . number_format($row['cobrado'], 0, ',', '.') : '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-right {{ $row['pendiente'] > 0 ? 'text-red-500' : 'text-gray-300' }}">
-                            {{ $row['pendiente'] > 0 ? '$ ' . number_format($row['pendiente'], 0, ',', '.') : '—' }}
-                        </td>
-                        <td class="px-4 py-3">
-                            @if($total > 0)
-                            <div class="flex h-3 rounded overflow-hidden bg-gray-100">
-                                @if($row['cobrado'] > 0)
-                                    <div class="bg-green-500 h-full" style="width:{{ $pct }}%"></div>
-                                @endif
-                                @if($row['pendiente'] > 0)
-                                    <div class="bg-red-300 h-full" style="width:{{ 100 - $pct }}%"></div>
-                                @endif
-                            </div>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-right text-gray-600">{{ $pct > 0 ? $pct.'%' : '—' }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     {{-- ── Sección 2: Cuotas pendientes/vencidas ──────────────────────────── --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -343,77 +288,6 @@
             </table>
         </div>
         @endif
-    </div>
-
-    {{-- ── Sección 5: Rendición por propietario (resumen) ──────────────────── --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100">
-                <h3 class="font-semibold text-gray-800">Rendición por Propietario — {{ $anio }}</h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Propietario</th>
-                            <th class="px-4 py-3 text-right">Alquiler</th>
-                            <th class="px-4 py-3 text-right">Comisión</th>
-                            <th class="px-4 py-3 text-right">Neto</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                        @forelse($liquidacionesPorPropietario as $row)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium text-gray-900">{{ $row['propietario'] }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">$ {{ number_format($row['total_alquiler'], 0, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-right text-red-500">- $ {{ number_format($row['total_comision'], 0, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-right font-bold text-gray-900">$ {{ number_format($row['total_neto'], 0, ',', '.') }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="4" class="px-4 py-8 text-center text-gray-400 text-sm">Sin datos para el período.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100">
-                <h3 class="font-semibold text-gray-800">Gastos Deducibles por Categoría — {{ $anio }}</h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Categoría</th>
-                            <th class="px-4 py-3 text-center">Cantidad</th>
-                            <th class="px-4 py-3 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                        @forelse($gastosPorCategoria as $g)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium text-gray-900">
-                                {{ match($g->categoria) {
-                                    'reparacion'    => 'Reparación',
-                                    'expensas'      => 'Expensas',
-                                    'impuesto'      => 'Impuesto',
-                                    'servicio'      => 'Servicio',
-                                    'administracion'=> 'Administración',
-                                    default         => 'Otro'
-                                } }}
-                            </td>
-                            <td class="px-4 py-3 text-center text-gray-500">{{ $g->cantidad }}</td>
-                            <td class="px-4 py-3 text-right font-bold text-gray-900">$ {{ number_format($g->total, 0, ',', '.') }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="3" class="px-4 py-8 text-center text-gray-400 text-sm">Sin gastos registrados.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     {{-- ── Sección 6: Alertas ───────────────────────────────────────────────── --}}

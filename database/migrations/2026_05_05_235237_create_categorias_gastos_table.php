@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('categorias_gastos', function (Blueprint $table) {
+            $table->id();
+            $table->string('nombre')->unique();
+            $table->timestamps();
+        });
+
+        // Categorías iniciales
+        DB::table('categorias_gastos')->insert([
+            ['nombre' => 'Reparación',      'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Expensas',         'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Impuesto',         'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Servicio',         'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Administración',   'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Otro',             'created_at' => now(), 'updated_at' => now()],
+        ]);
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('categorias_gastos');
+    }
+};

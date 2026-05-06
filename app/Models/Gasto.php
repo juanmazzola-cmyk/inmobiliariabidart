@@ -38,13 +38,6 @@ class Gasto extends Model
 
     public function getCategoriaLabelAttribute(): string
     {
-        return match ($this->categoria) {
-            'reparacion' => 'Reparación',
-            'expensas' => 'Expensas',
-            'impuesto' => 'Impuesto',
-            'servicio' => 'Servicio',
-            'administracion' => 'Administración',
-            default => 'Otro',
-        };
+        return $this->categoria;
     }
 }

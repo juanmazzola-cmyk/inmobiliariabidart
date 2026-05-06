@@ -15,8 +15,12 @@
 
 ### Rutas (`routes/web.php`)
 
+Todas las rutas (excepto login) están dentro de `Route::middleware('auth')->group(...)`.
+
 | Ruta | Componente | Nombre |
 |------|-----------|--------|
+| `/login` | `Login` | `login` (middleware `guest`) |
+| `/logout` | closure POST | `logout` |
 | `/dashboard` | `Dashboard` | `dashboard` |
 | `/propietarios` | `Propietarios` | `propietarios.index` |
 | `/inquilinos` | `Inquilinos` | `inquilinos.index` |
@@ -30,7 +34,6 @@
 | `/configuracion` | `Configuracion` | `configuracion.index` |
 | `/pagos/{id}/recibo` | closure PDF | `pagos.recibo` |
 | `/liquidaciones/{id}/pdf` | closure PDF | `liquidaciones.pdf` |
-| `/configuracion/backup` | closure SQL dump | `configuracion.backup` |
 
 ### Modelos (`app/Models/`)
 
@@ -44,23 +47,58 @@
 | `Pago` | `pagos` | `contrato` |
 | `Gasto` | `gastos` | `propiedad` |
 | `Liquidacion` | `liquidaciones` | `propietario`, `pagos` |
+| `CategoriaGasto` | `categorias_gastos` | — |
 | `Configuracion` | `configuracion` | — (singleton: `firstOrCreate(['id'=>1])`) |
 
 ### Componentes Livewire (`app/Livewire/`)
 
-Todos usan `#[Layout('layouts.app')]` y `#[Title('...')]`.
-
-- `Dashboard` — KPIs, alquileres vencidos, contratos próximos a vencer, marca de agua
+- `Login` — usa `#[Layout('layouts.guest')]`. Autentica por campo `name` (no email). Tiene "¿Olvidaste tu contraseña?" que genera contraseña aleatoria y redirige a WhatsApp.
+- `Dashboard` — KPIs, alquileres vencidos, contratos próximos a vencer, marca de agua. Todos usan `#[Layout('layouts.app')]` y `#[Title('...')]`.
 - `Propietarios` — CRUD + conteo de propiedades alquiler/venta como links. DNI opcional. Al guardar, convierte nombre y apellido a Title Case.
 - `Inquilinos` — CRUD. Al guardar, convierte nombre, apellido y ocupación a Title Case.
 - `Propiedades` — CRUD alquileres con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
 - `PropiedadesVenta` — CRUD ventas con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
 - `Contratos` — CRUD + modal de aumento de alquiler (% o valor fijo) + campo comisión en $. En el sidebar se muestra como **"Contratos de alquiler"**.
 - `Pagos` — registro de cobros, descarga de recibo PDF (dos copias: ORIGINAL/DUPLICADO en una hoja)
-- `Gastos` — CRUD gastos por propiedad
+- `Gastos` — CRUD gastos por propiedad. Categorías cargadas dinámicamente desde `CategoriaGasto`.
 - `Liquidaciones` — generación de liquidaciones con descuento por % o valor fijo (ARS/USD), PDF (dos páginas: ORIGINAL/DUPLICADO). Estados: solo `emitida` y `pagada` (se eliminó `borrador`). Se crea directamente como `emitida`.
-- `Reportes` — reportes varios incluyendo propiedades vendidas
-- `Configuracion` — datos de la empresa, logo, backup/restore de base de datos
+- `Reportes` — reportes varios incluyendo propiedades vendidas. **No incluye**: rendición por propietario, gastos deducibles por categoría, ni cuotas cobradas por período (se eliminaron).
+- `Configuracion` — datos de la empresa, logo, categorías de gastos, credenciales de acceso al sistema.
+
+---
+
+## Autenticación
+
+### Login
+- Componente `Login` con layout `layouts.guest` (fondo degradado oscuro, centrado).
+- Autentica por `users.name` (no por email): `User::where('name', $usuario)->first()` + `Hash::check()`.
+- Campo "Recordarme" usa `Auth::login($user, $this->remember)`.
+- `bootstrap/app.php` tiene `$middleware->redirectGuestsTo('/login')` para que el middleware `auth` redirija correctamente.
+- El header del layout incluye botón "Salir" → POST `/logout`.
+
+### Recuperación de contraseña por WhatsApp
+- Botón "¿Olvidaste tu contraseña?" en el formulario de login.
+- Genera contraseña aleatoria (3 letras mayúsculas + 3 números), la guarda hasheada en `users.password`.
+- Redirige directamente a `https://wa.me/{numero}?text={mensaje}` (usando `$this->redirect()`, no `window.open`).
+- El número de WhatsApp se configura en Configuración → "Acceso al sistema" → campo "WhatsApp para recuperación".
+- Si no hay WhatsApp configurado, muestra aviso en pantalla.
+- **La contraseña nunca se muestra en pantalla** — solo va al WhatsApp del propietario.
+
+### Credenciales configurables
+- Usuario y WhatsApp se guardan en la tabla `configuracion` (`login_usuario`, `login_whatsapp`).
+- Al guardar en Configuración, se sincroniza `users.name` (y `users.password` si se ingresó nueva contraseña).
+- La contraseña en Configuración es opcional: dejarla vacía no la cambia.
+
+---
+
+## Categorías de gastos
+
+- Almacenadas en la tabla `categorias_gastos` (modelo `CategoriaGasto`), no hardcodeadas.
+- Se gestionan desde Configuración → sección "Categorías de gastos" (agregar / eliminar).
+- **Las categorías se guardan como nombre de display directamente** (ej: `"Reparación"`, no `"reparacion"`).
+- `Gasto::getCategoriaLabelAttribute()` simplemente devuelve `$this->categoria` (sin conversión).
+- El select de categoría en el modal de gastos y el filtro de la lista usan `@foreach ($categorias as $cat)`.
+- Categorías iniciales sembradas en la migración: Administración, Expensas, Impuesto, Otro, Reparación, Servicio.
 
 ---
 
@@ -186,6 +224,8 @@ Todas las migraciones en `database/migrations/` están aplicadas, incluyendo:
 - `2026_05_01_022406_add_cascade_delete_to_pagos_and_liquidaciones.php` (ON DELETE CASCADE en `pagos` y `liquidaciones`)
 - `2026_05_02_000001_add_valor_referencia_to_propiedades_table.php` (campo `valor_referencia` decimal nullable en `propiedades`)
 - `2026_05_05_210555_add_descuento_tipo_to_liquidaciones_table.php` (campo `descuento_tipo` string en `liquidaciones`, default `'porcentaje'`)
+- `2026_05_05_225616_add_login_fields_to_configuracion_table.php` (campos `login_usuario` default `'admin'` y `login_whatsapp` nullable en `configuracion`)
+- `2026_05_05_235237_create_categorias_gastos_table.php` (tabla `categorias_gastos` con seed de 6 categorías)
 
 ---
 
@@ -212,7 +252,6 @@ php artisan optimize:clear
 - Las fotos de propiedades en alquiler se guardan en `storage/app/public/propiedades-alquiler/`.
 - Las fotos de propiedades en venta se guardan en `storage/app/public/propiedades-venta/`.
 - El logo de configuración se guarda en `storage/app/public/` (path guardado en `configuracion.logo_path`).
-- El backup de base de datos es un dump SQL puro generado en PHP (sin `mysqldump`), importable desde el mismo panel de Configuración.
 
 ## Producción — DonWeb hosting compartido
 
@@ -230,8 +269,15 @@ php artisan optimize:clear
 
 ### Pasos para actualizar producción
 1. Crear ZIP con archivos modificados (preservar estructura de carpetas)
-2. Subir y extraer en `public_html/inmobiliariabidart_app/`
-3. Si hay nuevas migraciones: subir `setup.php` a `public_html/inmobiliariabidart/`, ejecutarlo y borrarlo
+2. **CRÍTICO: excluir siempre del ZIP:** `bootstrap/cache/*.php`, `storage/`, `public/`, `vendor/`, `node_modules/`, `.env`, `.git`
+   - `bootstrap/cache/` contiene caché de configuración local (DB `inmobiliaria`) que rompe producción (DB `c2761827_inmobid`)
+3. Subir y extraer en `public_html/inmobiliariabidart_app/`
+4. Si hay nuevas migraciones: subir `setup.php` a `public_html/inmobiliariabidart/`, ejecutarlo y borrarlo
+
+### setup.php
+Script PHP temporal para ejecutar migraciones y limpiar caché en producción (sin SSH).
+Borra: `bootstrap/cache/config.php`, `routes-v7.php`, `services.php`, `packages.php`, `events.php` y `storage/framework/views/*.php`.
+**Siempre borrar el script después de usarlo.**
 
 ---
 

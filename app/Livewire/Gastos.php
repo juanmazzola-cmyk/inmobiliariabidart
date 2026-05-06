@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\CategoriaGasto;
 use App\Models\Gasto;
 use App\Models\Propiedad;
 use Livewire\Attributes\Layout;
@@ -66,8 +67,9 @@ class Gastos extends Component
             ->paginate(15);
 
         return view('livewire.gastos', [
-            'gastos' => $gastos,
+            'gastos'      => $gastos,
             'propiedades' => Propiedad::with('propietario')->orderBy('ciudad')->get(),
+            'categorias'  => CategoriaGasto::orderBy('nombre')->pluck('nombre'),
             'totalGastos' => Gasto::when($this->filtroCategoria, fn($q) => $q->where('categoria', $this->filtroCategoria))
                 ->when($this->filtroPropiedad, fn($q) => $q->where('propiedad_id', $this->filtroPropiedad))
                 ->sum('monto'),
@@ -77,7 +79,7 @@ class Gastos extends Component
     public function nuevo(): void
     {
         $this->reset(['gastoId', 'propiedadId', 'concepto', 'proveedor', 'comprobante', 'observaciones', 'monto']);
-        $this->categoria = 'reparacion';
+        $this->categoria = CategoriaGasto::orderBy('nombre')->value('nombre') ?? '';
         $this->deducible = true;
         $this->fecha = now()->format('Y-m-d');
         $this->modalAbrir = true;

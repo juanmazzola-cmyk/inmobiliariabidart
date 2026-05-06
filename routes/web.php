@@ -6,13 +6,26 @@ use App\Livewire\Dashboard;
 use App\Livewire\Gastos;
 use App\Livewire\Inquilinos;
 use App\Livewire\Liquidaciones;
+use App\Livewire\Login;
 use App\Livewire\Pagos;
 use App\Livewire\Propiedades;
 use App\Livewire\PropiedadesVenta;
 use App\Livewire\Propietarios;
 use App\Livewire\Reportes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/login', Login::class)->name('login')->middleware('guest');
+
+Route::post('/logout', function () {
+    Auth::logout();
+    session()->invalidate();
+    session()->regenerateToken();
+    return redirect()->route('login');
+})->name('logout');
+
+Route::middleware('auth')->group(function () {
 
 Route::get('/', function () {
     return redirect(url('/dashboard'));
@@ -104,3 +117,5 @@ Route::get('/liquidaciones/{id}/pdf', function (int $id) {
     $component = new Liquidaciones();
     return $component->generarPdf($id);
 })->name('liquidaciones.pdf');
+
+}); // end auth middleware

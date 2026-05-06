@@ -5,12 +5,9 @@
 
         <select wire:model.live="filtroCategoria" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Todas las categorías</option>
-            <option value="reparacion">Reparación</option>
-            <option value="expensas">Expensas</option>
-            <option value="impuesto">Impuesto</option>
-            <option value="servicio">Servicio</option>
-            <option value="administracion">Administración</option>
-            <option value="otro">Otro</option>
+            @foreach ($categorias as $cat)
+                <option value="{{ $cat }}">{{ $cat }}</option>
+            @endforeach
         </select>
 
         <button wire:click="nuevo"
@@ -127,12 +124,9 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Categoría *</label>
                         <select wire:model="categoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="reparacion">Reparación</option>
-                            <option value="expensas">Expensas</option>
-                            <option value="impuesto">Impuesto</option>
-                            <option value="servicio">Servicio</option>
-                            <option value="administracion">Administración</option>
-                            <option value="otro">Otro</option>
+                            @foreach ($categorias as $cat)
+                                <option value="{{ $cat }}">{{ $cat }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div>

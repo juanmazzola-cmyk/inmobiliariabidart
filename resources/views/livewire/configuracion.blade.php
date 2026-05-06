@@ -100,60 +100,62 @@
 
     </form>
 
-    {{-- Copia de seguridad --}}
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5 mt-6">
-        <h3 class="text-sm font-semibold text-gray-700">Copia de seguridad</h3>
+    {{-- Categorías de gastos --}}
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mt-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-4">Categorías de gastos</h3>
 
-        {{-- Exportar --}}
-        <div class="flex items-center justify-between py-3 border-b border-gray-100">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Exportar backup</p>
-                <p class="text-xs text-gray-400 mt-0.5">Descarga un archivo .sql con toda la base de datos</p>
-            </div>
-            <a href="{{ route('configuracion.backup') }}"
-               class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                </svg>
-                Exportar
-            </a>
+        <div class="flex gap-2 mb-4">
+            <input type="text" wire:model="nuevaCategoria" wire:keydown.enter="agregarCategoria"
+                class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Nueva categoría...">
+            <button wire:click="agregarCategoria" type="button"
+                class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                Agregar
+            </button>
         </div>
+        @error('nuevaCategoria') <p class="text-red-500 text-xs mb-3">{{ $message }}</p> @enderror
 
-        {{-- Importar --}}
-        <div>
-            <p class="text-sm font-medium text-gray-700 mb-1">Importar backup</p>
-            <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-                ⚠️ Esto reemplazará <strong>todos los datos actuales</strong>. Asegurate de tener un backup exportado antes de continuar.
-            </p>
-
-            <div class="flex items-center gap-3">
-                <label class="flex-1">
-                    <div class="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-pointer hover:border-gray-300 bg-gray-50">
-                        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                        </svg>
-                        <span class="truncate">
-                            {{ $archivoBackup ? $archivoBackup->getClientOriginalName() : 'Seleccionar archivo .sql' }}
-                        </span>
-                    </div>
-                    <input wire:model="archivoBackup" type="file" accept=".sql,.txt" class="hidden">
-                </label>
-
-                <button type="button"
-                    wire:click="importarBackup"
-                    wire:confirm="¿Estás seguro? Esto borrará y reemplazará todos los datos actuales con el backup seleccionado."
-                    @if(!$archivoBackup) disabled @endif
-                    class="px-4 py-2 text-sm font-medium rounded-lg transition-colors
-                        {{ $archivoBackup
-                            ? 'bg-orange-600 text-white hover:bg-orange-700'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}">
-                    Importar
+        <div class="space-y-1">
+            @foreach ($categorias as $cat)
+            <div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50">
+                <span class="text-sm text-gray-700">{{ $cat->nombre }}</span>
+                <button wire:click="eliminarCategoria({{ $cat->id }})"
+                    wire:confirm="¿Eliminar la categoría '{{ $cat->nombre }}'?"
+                    type="button"
+                    class="text-gray-300 hover:text-red-500 transition-colors text-xs">
+                    ✕
                 </button>
             </div>
+            @endforeach
+        </div>
+    </div>
 
-            @error('archivoBackup')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
+    {{-- Acceso al sistema --}}
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mt-6 space-y-4">
+        <h3 class="text-sm font-semibold text-gray-700">Acceso al sistema</h3>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Usuario</label>
+            <input type="text" wire:model="loginUsuario"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="admin">
+            @error('loginUsuario') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Nueva contraseña <span class="text-gray-400 font-normal">(dejar vacío para no cambiar)</span></label>
+            <input type="password" wire:model="loginPassword"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••">
+            @error('loginPassword') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">WhatsApp para recuperación de contraseña</label>
+            <div class="flex rounded-lg overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500">
+                <span class="inline-flex items-center px-3 bg-gray-50 text-gray-500 text-sm border-r border-gray-200 select-none">+54</span>
+                <input type="text" wire:model="loginWhatsapp"
+                    class="flex-1 px-3 py-2 text-sm focus:outline-none"
+                    placeholder="9 11 1234-5678">
+            </div>
+            @error('loginWhatsapp') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>
     </div>
 </div>
