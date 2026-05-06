@@ -137,7 +137,7 @@
                     <div class="text-sm text-gray-500 text-right leading-tight">{{ \App\Models\Configuracion::get()->razon_social ?: \App\Models\Configuracion::get()->nombre }}</div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="text-xs text-slate-400 hover:text-red-500 transition-colors">
+                        <button type="submit" class="text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
                             Salir
                         </button>
                     </form>
