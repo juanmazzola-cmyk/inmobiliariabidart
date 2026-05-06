@@ -37,14 +37,6 @@ class Reportes extends Component
         $totalAnio     = Pago::where('periodo_anio', $this->anio)->where('estado', 'pagado')->sum('total');
         $pendienteAnio = Pago::where('periodo_anio', $this->anio)->whereIn('estado', ['pendiente', 'vencido'])->sum('total');
 
-        // ── 2. Cuotas pendientes/vencidas ──────────────────────────────────
-        $cuotasPendientes = Pago::with(['contrato.inquilino', 'contrato.propiedad'])
-            ->whereIn('estado', ['pendiente', 'vencido'])
-            ->when($this->mes,  fn($q) => $q->where('periodo_mes', $this->mes))
-            ->when($this->anio, fn($q) => $q->where('periodo_anio', $this->anio))
-            ->orderByRaw("FIELD(estado,'vencido','pendiente')")
-            ->orderBy('fecha_vencimiento')
-            ->get();
 
         // ── 3. Liquidaciones por período (detalle individual) ──────────────
         $liquidacionesDetalle = Liquidacion::with(['propietario', 'propiedad'])
@@ -98,7 +90,6 @@ class Reportes extends Component
         return view('livewire.reportes', [
             'totalAnio'                      => $totalAnio,
             'pendienteAnio'                  => $pendienteAnio,
-            'cuotasPendientes'               => $cuotasPendientes,
             'liquidacionesDetalle'           => $liquidacionesDetalle,
             'liquidacionesResumen'           => $liquidacionesResumen,
             'propiedadesAlquilerDisponibles' => $propiedadesAlquilerDisponibles,

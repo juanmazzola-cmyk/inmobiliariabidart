@@ -29,7 +29,7 @@
             <p class="text-2xl font-bold text-green-600 mt-1">$ {{ number_format($totalAnio, 0, ',', '.') }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pendiente / Vencido</p>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vencido {{ $anio }}</p>
             <p class="text-2xl font-bold text-red-600 mt-1">$ {{ number_format($pendienteAnio, 0, ',', '.') }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
@@ -37,70 +37,6 @@
             @php $efectividad = ($totalAnio + $pendienteAnio) > 0 ? round($totalAnio / ($totalAnio + $pendienteAnio) * 100, 1) : 0; @endphp
             <p class="text-2xl font-bold {{ $efectividad >= 80 ? 'text-green-600' : 'text-orange-600' }} mt-1">{{ $efectividad }}%</p>
         </div>
-    </div>
-
-    {{-- ── Sección 2: Cuotas pendientes/vencidas ──────────────────────────── --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="font-semibold text-gray-800">
-                Cuotas pendientes y vencidas
-                @if($cuotasPendientes->count() > 0)
-                    <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                        {{ $cuotasPendientes->count() }}
-                    </span>
-                @endif
-            </h3>
-            <span class="text-xs text-gray-400">Total: $ {{ number_format($cuotasPendientes->sum('total'), 0, ',', '.') }}</span>
-        </div>
-        @if($cuotasPendientes->isEmpty())
-            <div class="px-5 py-10 text-center text-gray-400 text-sm">No hay cuotas pendientes para el período seleccionado.</div>
-        @else
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    <tr>
-                        <th class="px-4 py-3 text-left">Inquilino</th>
-                        <th class="px-4 py-3 text-left">Inmueble</th>
-                        <th class="px-4 py-3 text-center">Período</th>
-                        <th class="px-4 py-3 text-center">Vencimiento</th>
-                        <th class="px-4 py-3 text-center">Estado</th>
-                        <th class="px-4 py-3 text-right">Monto</th>
-                        <th class="px-4 py-3 text-center">Acción</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    @foreach($cuotasPendientes as $pago)
-                    <tr class="{{ $pago->estado === 'vencido' ? 'bg-red-50' : 'hover:bg-gray-50' }} transition-colors">
-                        <td class="px-4 py-3 font-medium text-gray-900">{{ $pago->contrato->inquilino->nombre_completo }}</td>
-                        <td class="px-4 py-3 text-xs text-gray-500">
-                            {{ $pago->contrato->propiedad->tipo_label }}<br>{{ $pago->contrato->propiedad->ciudad }}
-                        </td>
-                        <td class="px-4 py-3 text-center text-gray-700">{{ $pago->periodo_label }}</td>
-                        <td class="px-4 py-3 text-center text-xs font-medium {{ $pago->estado === 'vencido' ? 'text-red-600' : 'text-gray-600' }}">
-                            {{ $pago->fecha_vencimiento->format('d/m/Y') }}
-                            @if($pago->estado === 'vencido')
-                                <br><span class="text-red-500">+{{ (int) now()->diffInDays($pago->fecha_vencimiento) }}d</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold
-                                {{ $pago->estado === 'vencido' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                {{ $pago->estado === 'vencido' ? 'Vencida' : 'Pendiente' }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-right font-bold {{ $pago->estado === 'vencido' ? 'text-red-700' : 'text-gray-900' }}">
-                            $ {{ number_format($pago->total, 0, ',', '.') }}
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <a href="{{ route('pagos.index') }}?filtroContrato={{ $pago->contrato_id }}"
-                                class="text-xs text-blue-600 hover:underline">Cobrar</a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @endif
     </div>
 
     {{-- ── Sección 3: Pagos a propietarios por período ─────────���───────────── --}}
