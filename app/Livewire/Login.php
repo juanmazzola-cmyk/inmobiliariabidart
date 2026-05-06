@@ -39,7 +39,7 @@ class Login extends Component
 
         Auth::login($user, $this->remember);
         session()->regenerate();
-        $this->redirect(route('dashboard'), navigate: true);
+        $this->redirect(route('dashboard'), navigate: false);
     }
 
     public function recuperarContrasena(): void
