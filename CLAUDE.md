@@ -58,10 +58,10 @@ Todas las rutas (excepto login) están dentro de `Route::middleware('auth')->gro
 - `Inquilinos` — CRUD. Al guardar, convierte nombre, apellido y ocupación a Title Case.
 - `Propiedades` — CRUD alquileres con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
 - `PropiedadesVenta` — CRUD ventas con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
-- `Contratos` — CRUD + modal de aumento de alquiler (% o valor fijo) + campo comisión en $. En el sidebar se muestra como **"Contratos de alquiler"**.
-- `Pagos` — registro de cobros, descarga de recibo PDF (dos copias: ORIGINAL/DUPLICADO en una hoja)
+- `Contratos` — CRUD + modal de aumento de alquiler (% o valor fijo) + campo comisión en $. Botón naranja **"Aplicar Incrementos"** ejecuta el comando `contratos:incrementar` manualmente. En el sidebar se muestra como **"Contratos de alquiler"**.
+- `Pagos` — registro de cobros, descarga de recibo PDF (dos copias: ORIGINAL/DUPLICADO en una hoja). KPI separado en **Pendiente** (amarillo) y **Vencido** (rojo). Campo `descuento_categoria` para categorizar descuentos (selector aparece con Alpine.js cuando descuento > 0).
 - `Gastos` — CRUD gastos por propiedad. Categorías cargadas dinámicamente desde `CategoriaGasto`.
-- `Liquidaciones` — generación de liquidaciones con descuento por % o valor fijo (ARS/USD), PDF (dos páginas: ORIGINAL/DUPLICADO). Estados: solo `emitida` y `pagada` (se eliminó `borrador`). Se crea directamente como `emitida`.
+- `Liquidaciones` — generación de liquidaciones con descuento por % o valor fijo (ARS/USD), PDF dos copias en una hoja A4 con línea de corte. Estados: solo `emitida` y `pagada`. Gastos ingresados en el modal como lista dinámica (categoría + monto), se crean registros `Gasto` vinculados via `liquidacion_id` al guardar.
 - `Reportes` — reportes varios incluyendo propiedades vendidas. **No incluye**: rendición por propietario, gastos deducibles por categoría, ni cuotas cobradas por período (se eliminaron).
 - `Configuracion` — datos de la empresa, logo, categorías de gastos, credenciales de acceso al sistema.
 
@@ -144,6 +144,25 @@ Botón ↑ (verde) en contratos activos/vencidos. Propiedades del componente:
 `modalAumento`, `aumentoContratoId`, `tipoAumento` (porcentaje|valor), `valorAumento`, `montoActualAumento`, `monedaAumento`, `actualizarCuotasAumento`.
 Métodos: `abrirModalAumento()`, `aplicarAumento()`, `cerrarModalAumento()`.
 
+### Incremento automático de alquiler (Contratos)
+- Campos en `contratos`: `incremento_automatico` (bool), `porcentaje_incremento`, `meses_incremento`, `ultimo_incremento_at` (date nullable).
+- Comando `php artisan contratos:incrementar` aplica incrementos a contratos activos donde los meses transcurridos desde `ultimo_incremento_at` (o `fecha_inicio`) ≥ `meses_incremento`. Actualiza `monto_alquiler`, `ultimo_incremento_at` y cuotas pendientes/vencidas.
+- Scheduler en `routes/console.php`: `Schedule::command('contratos:incrementar')->dailyAt('08:00')`.
+- Botón **"Aplicar Incrementos"** (naranja) en la barra de Contratos llama a `ejecutarIncrementos()` que hace `Artisan::call('contratos:incrementar')`.
+- Para que corra automáticamente en producción: configurar cron en cPanel → `* * * * * php artisan schedule:run`.
+
+### Gastos en Liquidaciones
+- En el modal de nueva liquidación, los gastos se ingresan como lista dinámica: categoría (select) + monto (number input) + botón "+ Agregar".
+- Se pueden agregar N gastos; cada uno aparece listado en rojo con botón × para quitar.
+- Al guardar, se crean registros en tabla `gastos` con `liquidacion_id` seteado (vinculación directa).
+- `total_gastos` en la liquidación se calcula sumando `$this->nuevosGastos`.
+- El PDF busca gastos por: 1) `liquidacion->gastos()`, 2) propiedad+mes/año, 3) todos los gastos de la propiedad sin `liquidacion_id`.
+
+### Descuento con categoría en Pagos
+- Columna `descuento_categoria` (string nullable) en tabla `pagos`.
+- En el modal de pago, cuando `descuento > 0`, Alpine.js (`x-show`) muestra un select de categorías. Se usa `x-model` junto a `wire:model` para no disparar requests Livewire en cada tecla.
+- El recibo PDF muestra `"Descuento — Categoría"` si hay categoría, o solo `"Descuento"` si no.
+
 ### Rescindir vs Eliminar contratos
 Dos acciones distintas en la tabla de contratos:
 - **Rescindir** (× naranja) — solo activos/vencidos. Cambia estado a `rescindido`, libera la propiedad a `disponible`. Conserva todos los pagos y liquidaciones.
@@ -177,8 +196,8 @@ El modal de nueva liquidación tiene un toggle **% Porcentaje / $ Valor fijo**:
 - El PDF muestra `(X%)` junto a "Comisión inmobiliaria" solo si `descuento_tipo === 'porcentaje'`
 
 ### PDFs con dos copias
-- **Recibo de pago** (`resources/views/pdf/recibo.blade.php`): dos copias en una hoja A4 separadas por línea de corte `✂ CORTE ✂`. Cada copia tiene etiqueta ORIGINAL / DUPLICADO. No muestra el propietario.
-- **Liquidación** (`resources/views/pdf/liquidacion.blade.php`): dos páginas separadas (`page-break-after: always`), cada una con etiqueta ORIGINAL / DUPLICADO.
+- **Recibo de pago** (`resources/views/pdf/recibo.blade.php`): dos copias en una hoja A4 separadas por línea de corte `✂ CORTE ✂`. Cada copia tiene etiqueta ORIGINAL / DUPLICADO. No muestra el propietario. Si hay descuento con categoría muestra `"Descuento — Categoría"`.
+- **Liquidación** (`resources/views/pdf/liquidacion.blade.php`): dos copias en **una sola hoja A4** con línea de corte (no page-break). Muestra cada gasto como `"Gastos deducibles — Categoría"` en el resumen. Los gastos se obtienen via `liquidacion->gastos()` (por `liquidacion_id`), con fallback a propiedad+mes/año, y luego a todos los gastos de la propiedad sin filtro.
 - Ambos PDFs muestran `$config->razon_social ?: $config->nombre` en el encabezado y firma.
 - El recibo recibe `$config` desde la closure en `routes/web.php`. La liquidación lo recibe desde `Liquidaciones::generarPdf()`.
 
@@ -226,6 +245,8 @@ Todas las migraciones en `database/migrations/` están aplicadas, incluyendo:
 - `2026_05_05_210555_add_descuento_tipo_to_liquidaciones_table.php` (campo `descuento_tipo` string en `liquidaciones`, default `'porcentaje'`)
 - `2026_05_05_225616_add_login_fields_to_configuracion_table.php` (campos `login_usuario` default `'admin'` y `login_whatsapp` nullable en `configuracion`)
 - `2026_05_05_235237_create_categorias_gastos_table.php` (tabla `categorias_gastos` con seed de 6 categorías)
+- `2026_05_06_185600_add_ultimo_incremento_to_contratos_table.php` (campo `ultimo_incremento_at` date nullable en `contratos`)
+- `2026_05_06_223709_add_descuento_categoria_to_pagos_table.php` (campo `descuento_categoria` string nullable en `pagos`)
 
 ---
 
@@ -246,7 +267,7 @@ php artisan optimize:clear
 
 ## Notas de desarrollo
 
-- El proyecto usa `git`. Repositorio: `https://github.com/juanmazzola-cmyk/inmobiliariabidart.git`. Ramas: `main` (producción) y `demo`.
+- El proyecto usa `git`. Repositorio: `https://github.com/juanmazzola-cmyk/inmobiliariabidart.git`. Rama única: `main` (la rama `demo` fue eliminada).
 - El entorno es Windows 10 con XAMPP. Los paths son `C:\xampp\htdocs\inmobiliaria\`.
 - Para abrir el proyecto localmente: `http://localhost/inmobiliaria/public/`
 - Las fotos de propiedades en alquiler se guardan en `storage/app/public/propiedades-alquiler/`.
@@ -262,17 +283,18 @@ php artisan optimize:clear
   - `public_html/inmobiliariabidart_app/` → aplicación Laravel completa
 - **`public/index.php` en servidor** tiene paths modificados apuntando a `/../inmobiliariabidart_app/`
 - **BD:** `c2761827_inmobid` (host: localhost)
-- **Deploy:** subir ZIPs via Administrador de Archivos del cPanel, extraer en su carpeta correspondiente
-- **Migraciones y caché en producción:** usar script `setup.php` temporal en `public_html/inmobiliariabidart/`
-- **Symlinks deshabilitados:** las fotos aún no funcionan en producción (pendiente resolución)
-- **`vendor/` generado localmente** con `composer install --no-dev --optimize-autoloader` e incluido en el ZIP
+- **Deploy:** automático via webhook GitHub → Feroz panel (git-based). Al hacer `git push` a `main`, Feroz detecta el push y despliega automáticamente.
+- **`.cpanel.yml`** ejecuta post-deploy: `php artisan migrate --force` y `php artisan optimize:clear`.
+- **`vendor/` y `public/build/`** están commiteados en el repo (el servidor no tiene composer ni npm).
+- **Migraciones manuales en producción:** si el `.cpanel.yml` no las aplicó, subir `setup.php` a `public_html/inmobiliariabidart/`, ejecutarlo y borrarlo inmediatamente.
+- **Symlinks deshabilitados:** las fotos aún no funcionan en producción (pendiente resolución).
 
-### Pasos para actualizar producción
-1. Crear ZIP con archivos modificados (preservar estructura de carpetas)
-2. **CRÍTICO: excluir siempre del ZIP:** `bootstrap/cache/*.php`, `storage/`, `public/`, `vendor/`, `node_modules/`, `.env`, `.git`
-   - `bootstrap/cache/` contiene caché de configuración local (DB `inmobiliaria`) que rompe producción (DB `c2761827_inmobid`)
-3. Subir y extraer en `public_html/inmobiliariabidart_app/`
-4. Si hay nuevas migraciones: subir `setup.php` a `public_html/inmobiliariabidart/`, ejecutarlo y borrarlo
+### Deploy automático (flujo normal)
+1. Hacer cambios locales
+2. `npm run build` si se modificó CSS/JS
+3. `git add`, `git commit`, `git push`
+4. El webhook dispara el deploy en Feroz automáticamente
+5. `.cpanel.yml` corre migraciones y limpia caché
 
 ### setup.php
 Script PHP temporal para ejecutar migraciones y limpiar caché en producción (sin SSH).
