@@ -27,6 +27,8 @@ class Liquidaciones extends Component
     public int $filtroMes = 0;
     #[Url]
     public int $filtroAnio = 0;
+    #[Url]
+    public ?int $desdePagoId = null;
 
     // Modal estado (editar existente)
     public bool $modalAbrir = false;
@@ -53,6 +55,13 @@ class Liquidaciones extends Component
     public array  $nuevosGastos    = [];
     public string $gastoCategoria  = '';
     public string $gastoMonto      = '';
+
+    public function mount(): void
+    {
+        if ($this->desdePagoId) {
+            $this->preCargarDesdePago($this->desdePagoId);
+        }
+    }
 
     public function updatingBusqueda(): void
     {
@@ -230,21 +239,62 @@ class Liquidaciones extends Component
             'observaciones'       => $this->nuevaObservaciones ?: null,
         ]);
 
-        // Crear registros de Gasto para cada ítem ingresado
+        // Vincular o crear registros de Gasto
         foreach ($this->nuevosGastos as $g) {
-            Gasto::create([
-                'propiedad_id'   => $contrato->propiedad_id,
-                'liquidacion_id' => $liquidacion->id,
-                'categoria'      => $g['categoria'],
-                'concepto'       => $g['categoria'],
-                'monto'          => $g['monto'],
-                'fecha'          => now()->startOfMonth()->setMonth($this->nuevaMes)->setYear($this->nuevaAnio)->toDateString(),
-                'deducible'      => true,
-            ]);
+            if (!empty($g['id'])) {
+                // Gasto pre-existente (vino del pago): solo agregar liquidacion_id
+                Gasto::where('id', $g['id'])->update(['liquidacion_id' => $liquidacion->id]);
+            } else {
+                // Gasto nuevo ingresado manualmente en el modal
+                Gasto::create([
+                    'propiedad_id'   => $contrato->propiedad_id,
+                    'liquidacion_id' => $liquidacion->id,
+                    'categoria'      => $g['categoria'],
+                    'concepto'       => $g['categoria'],
+                    'monto'          => $g['monto'],
+                    'fecha'          => now()->startOfMonth()->setMonth($this->nuevaMes)->setYear($this->nuevaAnio)->toDateString(),
+                    'deducible'      => true,
+                ]);
+            }
         }
 
         $this->modalNueva = false;
         session()->flash('success', 'Liquidación creada correctamente.');
+    }
+
+    private function preCargarDesdePago(int $pagoId): void
+    {
+        $pago = \App\Models\Pago::with(['contrato'])->find($pagoId);
+        if (!$pago) return;
+
+        $this->abrirNueva();
+
+        $this->nuevaContratoId    = $pago->contrato_id;
+        $this->nuevaMes           = $pago->periodo_mes;
+        $this->nuevaAnio          = $pago->periodo_anio;
+        $this->nuevaMontoAlquiler = (string)(int)$pago->monto;
+
+        $contrato = $pago->contrato;
+        if ($contrato->comision_monto) {
+            $this->nuevaDescuentoTipo      = 'valor';
+            $this->nuevaDescuentoValorFijo = (string)(int)$contrato->comision_monto;
+            $this->nuevaDescuentoMoneda    = 'ARS';
+        } else {
+            $this->nuevaDescuentoTipo      = 'porcentaje';
+            $this->nuevaComisionPorcentaje = (string)$contrato->comision_porcentaje;
+        }
+
+        // Pre-cargar gastos vinculados a este pago (reutilizar registros existentes)
+        $gastos = Gasto::where('pago_id', $pagoId)->get();
+        $this->nuevosGastos = [];
+        foreach ($gastos as $g) {
+            $this->nuevosGastos[] = [
+                'id'       => $g->id,
+                'categoria'=> $g->categoria,
+                'monto'    => (float)$g->monto,
+            ];
+        }
+        $this->nuevaTotalGastos = (string)(int)collect($this->nuevosGastos)->sum('monto');
     }
 
     public function cerrarModalNueva(): void
