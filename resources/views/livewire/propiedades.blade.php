@@ -129,10 +129,9 @@
                 @endif
 
                 <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                    <a href="{{ route('contratos.index') }}?propiedad={{ $p->id }}"
-                        class="text-xs text-blue-600 hover:underline">
-                        {{ $p->contratos_count }} contrato/s →
-                    </a>
+                    <span class="text-xs text-gray-400">
+                        {{ $p->contratos_count }} contrato/s
+                    </span>
                     <div class="flex items-center gap-1">
                         <a href="{{ route('contratos.index', ['abrirConPropiedad' => $p->id]) }}"
                             title="Nuevo contrato para esta propiedad"
