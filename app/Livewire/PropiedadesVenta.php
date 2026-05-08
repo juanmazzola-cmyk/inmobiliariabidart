@@ -29,6 +29,8 @@ class PropiedadesVenta extends Component
     public string $filtroMoneda = '';
     #[Url]
     public string $filtroPropietario = '';
+    #[Url]
+    public ?int $abrirConPropietario = null;
 
     public bool $modalAbrir = false;
     public ?int $propiedadId = null;
@@ -84,6 +86,14 @@ class PropiedadesVenta extends Component
         'nuevasFotos.*.image'  => 'Cada foto debe ser una imagen.',
         'nuevasFotos.*.max'    => 'Cada foto no puede superar 3 MB.',
     ];
+
+    public function mount(): void
+    {
+        if ($this->abrirConPropietario) {
+            $this->nueva();
+            $this->propietarioId = $this->abrirConPropietario;
+        }
+    }
 
     public function updatingBusqueda(): void
     {

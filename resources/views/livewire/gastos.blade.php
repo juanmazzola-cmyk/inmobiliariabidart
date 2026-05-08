@@ -1,6 +1,6 @@
 <div>
     <div class="flex flex-col sm:flex-row gap-3 mb-6">
-        <input wire:model.live="busqueda" type="text" placeholder="Buscar concepto o proveedor..."
+        <input wire:model.live="busqueda" type="text" placeholder="Buscar por inquilino o propietario..."
             class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
 
         <select wire:model.live="filtroCategoria" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -45,17 +45,20 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3 text-gray-600">{{ $g->fecha->format('d/m/Y') }}</td>
                         <td class="px-4 py-3">
-                            <p class="text-xs font-medium text-gray-900">{{ $g->propiedad->tipo_label }}</p>
-                            <p class="text-xs text-gray-400">{{ $g->propiedad->ciudad }}</p>
+                            <p class="text-xs font-medium text-gray-900">{{ $g->propiedad->direccion_completa }}</p>
                             <p class="text-xs text-gray-400">{{ $g->propiedad->propietario->nombre_completo }}</p>
+                            @php $inquilino = $g->propiedad->contratos->first()?->inquilino; @endphp
+                            @if ($inquilino)
+                                <p class="text-xs text-blue-500">Inq: {{ $inquilino->nombre_completo }}</p>
+                            @endif
                         </td>
-                        <td class="px-4 py-3 font-medium text-gray-900">{{ $g->concepto }}</td>
+                        <td class="px-4 py-3 font-medium text-gray-900">{{ ucfirst($g->concepto) }}</td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                                {{ $g->categoria_label }}
+                                {{ ucfirst($g->categoria_label) }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">{{ $g->proveedor ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $g->proveedor ? ucfirst($g->proveedor) : '—' }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ $g->comprobante ?? '—' }}</td>
                         <td class="px-4 py-3 text-center">
                             @if($g->deducible)
@@ -107,7 +110,7 @@
                         <option value="">Seleccionar propiedad...</option>
                         @foreach($propiedades as $prop)
                             <option value="{{ $prop->id }}">
-                                {{ $prop->tipo_label }} — {{ $prop->direccion }}, {{ $prop->ciudad }} ({{ $prop->propietario->nombre_completo }})
+                                {{ $prop->tipo_label }} — {{ $prop->direccion_completa }} ({{ $prop->propietario->nombre_completo }})
                             </option>
                         @endforeach
                     </select>

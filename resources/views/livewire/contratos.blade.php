@@ -31,15 +31,7 @@
             <option value="rescindido">Rescindido</option>
             <option value="renovado">Renovado</option>
         </select>
-        <button wire:click="ejecutarIncrementos" wire:loading.attr="disabled"
-            class="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-            </svg>
-            <span wire:loading.remove wire:target="ejecutarIncrementos">Aplicar Incrementos</span>
-            <span wire:loading wire:target="ejecutarIncrementos">Procesando...</span>
-        </button>
-        <button wire:click="nuevo"
+<button wire:click="nuevo"
             class="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -125,6 +117,13 @@
                                         class="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Ver cuotas">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                        </svg>
+                                    </a>
+                                    {{-- Plan de pagos PDF --}}
+                                    <a href="{{ route('contratos.plan-pagos', $c->id) }}" target="_blank"
+                                        class="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Plan de pagos PDF">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                                         </svg>
                                     </a>
                                     {{-- Editar --}}

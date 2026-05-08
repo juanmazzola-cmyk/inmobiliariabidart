@@ -123,12 +123,14 @@ class Contratos extends Component
                 'pagos as cuotas_pagadas'    => fn($q) => $q->where('estado', 'pagado'),
             ])
             ->when($this->busqueda, fn($q) =>
-                $q->whereHas('inquilino', fn($i) =>
-                    $i->where('apellido', 'like', "%{$this->busqueda}%")
-                      ->orWhere('nombre', 'like', "%{$this->busqueda}%")
-                )->orWhereHas('propiedad', fn($p) =>
-                    $p->where('direccion', 'like', "%{$this->busqueda}%")
-                      ->orWhere('ciudad', 'like', "%{$this->busqueda}%")
+                $q->where(fn($sub) =>
+                    $sub->whereHas('inquilino', fn($i) =>
+                        $i->where('apellido', 'like', "%{$this->busqueda}%")
+                          ->orWhere('nombre', 'like', "%{$this->busqueda}%")
+                    )->orWhereHas('propiedad', fn($p) =>
+                        $p->where('direccion', 'like', "%{$this->busqueda}%")
+                          ->orWhere('ciudad', 'like', "%{$this->busqueda}%")
+                    )
                 )
             )
             ->when($this->filtroEstado, fn($q) => $q->where('estado', $this->filtroEstado))
@@ -220,7 +222,7 @@ class Contratos extends Component
         $this->validate();
 
         $monto    = (float) $this->montoAlquiler;
-        $deposito = $this->depositoGarantia ? (float) $this->depositoGarantia : null;
+        $deposito = $this->depositoGarantia !== '' ? (float) $this->depositoGarantia : 0;
 
         $datos = [
             'propiedad_id'         => $this->propiedadId,
@@ -321,13 +323,24 @@ class Contratos extends Component
         $contrato->update(['monto_alquiler' => $nuevoMonto]);
 
         if ($this->actualizarCuotasAumento) {
-            Pago::where('contrato_id', $this->aumentoContratoId)
+            $pagos = Pago::where('contrato_id', $this->aumentoContratoId)
                 ->whereIn('estado', ['pendiente', 'vencido'])
-                ->update(['monto' => $nuevoMonto, 'total' => $nuevoMonto]);
+                ->get();
+
+            foreach ($pagos as $pago) {
+                $nuevoMontoCuota = $this->tipoAumento === 'porcentaje'
+                    ? round($pago->monto * (1 + $valorLimpio / 100))
+                    : round($pago->monto + $valorLimpio);
+
+                $pago->update([
+                    'monto' => $nuevoMontoCuota,
+                    'total' => $nuevoMontoCuota + $pago->recargo - $pago->descuento,
+                ]);
+            }
         }
 
         $this->cerrarModalAumento();
-        session()->flash('success', 'Alquiler actualizado a $ ' . number_format($nuevoMonto, 0, ',', '.') . '.');
+        session()->flash('success', 'Alquiler actualizado. Base nueva: $ ' . number_format($nuevoMonto, 0, ',', '.') . '.');
     }
 
     public function cerrarModalAumento(): void
@@ -355,11 +368,21 @@ class Contratos extends Component
 
     private function generarCuotasMensuales(Contrato $contrato): void
     {
-        $cursor = Carbon::parse($contrato->fecha_inicio)->startOfMonth();
-        $fin    = Carbon::parse($contrato->fecha_fin);
-        $dia    = $contrato->dia_vencimiento;
+        $cursor  = Carbon::parse($contrato->fecha_inicio)->startOfMonth();
+        $fin     = Carbon::parse($contrato->fecha_fin);
+        $dia     = $contrato->dia_vencimiento;
+        $monto   = (float) $contrato->monto_alquiler;
+        $mes     = 0;
+
+        $conIncremento = $contrato->incremento_automatico
+            && $contrato->porcentaje_incremento > 0
+            && $contrato->meses_incremento > 0;
 
         while ($cursor->lte($fin)) {
+            if ($conIncremento && $mes > 0 && $mes % $contrato->meses_incremento === 0) {
+                $monto = round($monto * (1 + $contrato->porcentaje_incremento / 100));
+            }
+
             $diaReal     = min($dia, $cursor->daysInMonth);
             $vencimiento = Carbon::create($cursor->year, $cursor->month, $diaReal);
 
@@ -369,15 +392,16 @@ class Contratos extends Component
                 'fecha_pago'        => null,
                 'periodo_mes'       => $cursor->month,
                 'periodo_anio'      => $cursor->year,
-                'monto'             => $contrato->monto_alquiler,
+                'monto'             => $monto,
                 'recargo'           => 0,
                 'descuento'         => 0,
-                'total'             => $contrato->monto_alquiler,
+                'total'             => $monto,
                 'medio_pago'        => 'efectivo',
                 'estado'            => 'pendiente',
             ]);
 
             $cursor->addMonth();
+            $mes++;
         }
     }
 

@@ -26,6 +26,8 @@ class Propiedades extends Component
     public string $filtroTipo = '';
     #[Url]
     public string $filtroPropietario = '';
+    #[Url]
+    public ?int $abrirConPropietario = null;
 
     public bool $modalAbrir = false;
     public ?int $propiedadId = null;
@@ -72,6 +74,14 @@ class Propiedades extends Component
         'nuevasFotos.*.image'  => 'Cada foto debe ser una imagen.',
         'nuevasFotos.*.max'    => 'Cada foto no puede superar 3 MB.',
     ];
+
+    public function mount(): void
+    {
+        if ($this->abrirConPropietario) {
+            $this->nueva();
+            $this->propietarioId = $this->abrirConPropietario;
+        }
+    }
 
     public function updatingBusqueda(): void
     {
@@ -222,12 +232,18 @@ class Propiedades extends Component
         $propiedades = Propiedad::with(['propietario'])
             ->withCount(['contratos'])
             ->when($this->busqueda, fn($q) =>
-                $q->where('direccion', 'like', "%{$this->busqueda}%")
-                  ->orWhere('ciudad', 'like', "%{$this->busqueda}%")
-                  ->orWhereHas('propietario', fn($p) =>
-                      $p->where('apellido', 'like', "%{$this->busqueda}%")
-                        ->orWhere('nombre', 'like', "%{$this->busqueda}%")
-                  )
+                $q->where(fn($sub) =>
+                    $sub->where('direccion', 'like', "%{$this->busqueda}%")
+                        ->orWhere('ciudad', 'like', "%{$this->busqueda}%")
+                        ->orWhereHas('propietario', fn($p) =>
+                            $p->where('apellido', 'like', "%{$this->busqueda}%")
+                              ->orWhere('nombre', 'like', "%{$this->busqueda}%")
+                        )
+                        ->orWhereHas('contratos.inquilino', fn($i) =>
+                            $i->where('apellido', 'like', "%{$this->busqueda}%")
+                              ->orWhere('nombre', 'like', "%{$this->busqueda}%")
+                        )
+                )
             )
             ->when($this->filtroEstado, fn($q) => $q->where('estado', $this->filtroEstado))
             ->when($this->filtroTipo, fn($q) => $q->where('tipo', $this->filtroTipo))

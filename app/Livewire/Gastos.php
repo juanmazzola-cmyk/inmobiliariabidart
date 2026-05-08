@@ -56,10 +56,18 @@ class Gastos extends Component
 
     public function render()
     {
-        $gastos = Gasto::with(['propiedad.propietario'])
+        $gastos = Gasto::with([
+                'propiedad.propietario',
+                'propiedad.contratos' => fn($q) => $q->where('estado', 'activo')->with('inquilino'),
+            ])
             ->when($this->busqueda, fn($q) =>
-                $q->where('concepto', 'like', "%{$this->busqueda}%")
-                  ->orWhere('proveedor', 'like', "%{$this->busqueda}%")
+                $q->whereHas('propiedad.contratos.inquilino', fn($i) =>
+                    $i->where('nombre', 'like', "%{$this->busqueda}%")
+                      ->orWhere('apellido', 'like', "%{$this->busqueda}%")
+                )->orWhereHas('propiedad.propietario', fn($p) =>
+                    $p->where('nombre', 'like', "%{$this->busqueda}%")
+                      ->orWhere('apellido', 'like', "%{$this->busqueda}%")
+                )
             )
             ->when($this->filtroCategoria, fn($q) => $q->where('categoria', $this->filtroCategoria))
             ->when($this->filtroPropiedad, fn($q) => $q->where('propiedad_id', $this->filtroPropiedad))

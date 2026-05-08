@@ -16,7 +16,7 @@
     {{-- Filtros + botón nuevo --}}
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
         <div class="flex flex-wrap gap-3 items-end">
-            <input wire:model.live="busqueda" type="text" placeholder="Buscar dirección, ciudad o propietario..."
+            <input wire:model.live="busqueda" type="text" placeholder="Buscar dirección, propietario o inquilino..."
                 class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
             <select wire:model.live="filtroTipo" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Todos los tipos</option>

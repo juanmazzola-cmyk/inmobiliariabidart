@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Gasto;
 use App\Models\Pago;
 use App\Models\Contrato;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -30,6 +31,7 @@ class Pagos extends Component
 
     public bool $modalAbrir = false;
     public ?int $pagoId = null;
+    public array $gastosDisponibles = [];
 
     public ?int $contratoId = null;
     public string $fechaPago = '';
@@ -105,7 +107,10 @@ class Pagos extends Component
             'totalCobrado'   => $totalCobrado,
             'totalPendiente' => $totalPendiente,
             'totalVencido'   => $totalVencido,
-            'contratos'      => Contrato::with(['propiedad', 'inquilino'])->where('estado', 'activo')->get(),
+            'contratos'      => Contrato::with(['propiedad', 'inquilino'])
+                ->where(fn($q) => $q->where('estado', 'activo')
+                    ->orWhere('id', $this->contratoId)
+                )->get(),
             'categorias'     => \App\Models\CategoriaGasto::orderBy('nombre')->pluck('nombre'),
         ]);
     }
@@ -151,14 +156,75 @@ class Pagos extends Component
         $this->modalAbrir       = true;
     }
 
+    public function editarPago(int $id): void
+    {
+        $pago = Pago::with(['contrato'])->findOrFail($id);
+        $this->pagoId            = $id;
+        $this->contratoId        = $pago->contrato_id;
+        $this->periodoMes        = $pago->periodo_mes;
+        $this->periodoAnio       = $pago->periodo_anio;
+        $this->fechaVencimiento  = $pago->fecha_vencimiento->format('Y-m-d');
+        $this->fechaPago         = $pago->fecha_pago ? $pago->fecha_pago->format('Y-m-d') : now()->format('Y-m-d');
+        $this->monto             = $pago->monto;
+        $this->recargo           = $pago->recargo ?? '0';
+        $this->descuento         = $pago->descuento ?? '0';
+        $this->descuentoCategoria = $pago->descuento_categoria ?? '';
+        $this->medioPago         = $pago->medio_pago;
+        $this->numeroComprobante = $pago->numero_comprobante ?? '';
+        $this->estado            = $pago->estado;
+        $this->observaciones     = $pago->observaciones ?? '';
+        $this->resetValidation();
+        $this->modalAbrir        = true;
+    }
+
     public function updatedContratoId(): void
     {
         if ($this->contratoId) {
             $contrato = Contrato::find($this->contratoId);
             if ($contrato) {
                 $this->monto = $contrato->monto_alquiler;
+                $this->cargarGastos();
             }
+        } else {
+            $this->gastosDisponibles = [];
         }
+    }
+
+    public function updatedPeriodoMes(): void { $this->cargarGastos(); }
+    public function updatedPeriodoAnio(): void { $this->cargarGastos(); }
+
+    private function cargarGastos(): void
+    {
+        if (!$this->contratoId) return;
+        $contrato = Contrato::find($this->contratoId);
+        if (!$contrato) return;
+
+        $this->gastosDisponibles = Gasto::where('propiedad_id', $contrato->propiedad_id)
+            ->where(fn($q) =>
+                $q->whereMonth('fecha', $this->periodoMes)
+                  ->whereYear('fecha', $this->periodoAnio)
+                  ->orWhere(fn($q2) =>
+                      $q2->whereNull('liquidacion_id')
+                         ->where('fecha', '>=', now()->subMonths(3))
+                  )
+            )
+            ->orderByDesc('fecha')
+            ->get()
+            ->map(fn($g) => [
+                'id'       => $g->id,
+                'concepto' => $g->concepto,
+                'categoria'=> $g->categoria,
+                'monto'    => (float) $g->monto,
+            ])
+            ->toArray();
+    }
+
+    public function aplicarGasto(int $gastoId): void
+    {
+        $gasto = Gasto::find($gastoId);
+        if (!$gasto) return;
+        $this->descuento         = (string) (int) $gasto->monto;
+        $this->descuentoCategoria = $gasto->categoria;
     }
 
     public function guardar(): void
@@ -221,7 +287,8 @@ class Pagos extends Component
 
     public function cerrarModal(): void
     {
-        $this->modalAbrir = false;
+        $this->modalAbrir        = false;
+        $this->gastosDisponibles = [];
         $this->resetValidation();
     }
 }

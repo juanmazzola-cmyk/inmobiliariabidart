@@ -74,8 +74,7 @@
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $liq->periodo_label }}</td>
                         <td class="px-4 py-3 text-gray-700">{{ $liq->propietario->nombre_completo }}</td>
                         <td class="px-4 py-3 text-gray-600 text-xs">
-                            {{ $liq->propiedad->tipo_label }}<br>
-                            <span class="text-gray-400">{{ $liq->propiedad->ciudad }}</span>
+                            {{ $liq->propiedad->direccion_completa }}
                         </td>
                         <td class="px-4 py-3 text-right text-gray-700">
                             $ {{ number_format($liq->monto_alquiler, 0, ',', '.') }}
@@ -219,7 +218,7 @@
                             @foreach ($contratosActivos as $c)
                                 <option value="{{ $c->id }}">
                                     {{ $c->inquilino->nombre_completo }} —
-                                    {{ $c->propiedad->tipo_label }} {{ $c->propiedad->ciudad }}
+                                    {{ $c->propiedad->direccion_completa }}
                                     (Prop: {{ $c->propiedad->propietario->apellido }})
                                 </option>
                             @endforeach

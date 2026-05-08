@@ -145,12 +145,27 @@ class Liquidaciones extends Component
 
     public function updatedNuevaContratoId(): void
     {
-        if ($this->nuevaContratoId) {
-            $c = Contrato::find($this->nuevaContratoId);
-            if ($c) {
-                $this->nuevaMontoAlquiler      = $c->monto_alquiler;
-                $this->nuevaComisionPorcentaje = $c->comision_porcentaje;
-            }
+        if (!$this->nuevaContratoId) return;
+
+        $c = Contrato::with('pagos')->find($this->nuevaContratoId);
+        if (!$c) return;
+
+        // Tomar el monto del pago del período seleccionado (puede ser escalonado)
+        $pago = $c->pagos
+            ->where('periodo_mes', $this->nuevaMes)
+            ->where('periodo_anio', $this->nuevaAnio)
+            ->first();
+
+        $this->nuevaMontoAlquiler = $pago ? (string) $pago->monto : (string) $c->monto_alquiler;
+
+        // Pre-cargar comisión según tipo configurado en el contrato
+        if ($c->comision_monto) {
+            $this->nuevaDescuentoTipo      = 'valor';
+            $this->nuevaDescuentoValorFijo = (string) (int) $c->comision_monto;
+            $this->nuevaDescuentoMoneda    = 'ARS';
+        } else {
+            $this->nuevaDescuentoTipo      = 'porcentaje';
+            $this->nuevaComisionPorcentaje = (string) $c->comision_porcentaje;
         }
     }
 

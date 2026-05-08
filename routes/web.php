@@ -113,6 +113,27 @@ Route::get('/pagos/{id}/recibo', function (int $id) {
     );
 })->name('pagos.recibo');
 
+Route::get('/contratos/{id}/plan-pagos', function (int $id) {
+    $contrato = \App\Models\Contrato::with([
+        'propiedad.propietario',
+        'inquilino',
+        'pagos',
+    ])->findOrFail($id);
+
+    $config = \App\Models\Configuracion::get();
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.plan_pagos', compact('contrato', 'config'))
+        ->setPaper('a4', 'portrait');
+
+    $nombre = 'plan_pagos_contrato_' . str_pad($contrato->id, 6, '0', STR_PAD_LEFT) . '.pdf';
+
+    return response()->streamDownload(
+        fn() => print($pdf->output()),
+        $nombre,
+        ['Content-Type' => 'application/pdf']
+    );
+})->name('contratos.plan-pagos');
+
 Route::get('/liquidaciones/{id}/pdf', function (int $id) {
     $component = new Liquidaciones();
     return $component->generarPdf($id);
