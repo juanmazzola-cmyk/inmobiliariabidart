@@ -34,6 +34,7 @@ Todas las rutas (excepto login) están dentro de `Route::middleware('auth')->gro
 | `/configuracion` | `Configuracion` | `configuracion.index` |
 | `/pagos/{id}/recibo` | closure PDF | `pagos.recibo` |
 | `/liquidaciones/{id}/pdf` | closure PDF | `liquidaciones.pdf` |
+| `/contratos/{id}/plan-pagos` | closure PDF | `contratos.plan-pagos` |
 
 ### Modelos (`app/Models/`)
 
@@ -45,7 +46,7 @@ Todas las rutas (excepto login) están dentro de `Route::middleware('auth')->gro
 | `PropiedadVenta` | `propiedades_venta` | `propietario` (nullable) |
 | `Contrato` | `contratos` | `propiedad`, `inquilino`, `pagos` |
 | `Pago` | `pagos` | `contrato` |
-| `Gasto` | `gastos` | `propiedad` |
+| `Gasto` | `gastos` | `propiedad`, `liquidacion` (nullable), `pago` (nullable) |
 | `Liquidacion` | `liquidaciones` | `propietario`, `pagos` |
 | `CategoriaGasto` | `categorias_gastos` | — |
 | `Configuracion` | `configuracion` | — (singleton: `firstOrCreate(['id'=>1])`) |
@@ -54,13 +55,13 @@ Todas las rutas (excepto login) están dentro de `Route::middleware('auth')->gro
 
 - `Login` — usa `#[Layout('layouts.guest')]`. Autentica por campo `name` (no email). Tiene "¿Olvidaste tu contraseña?" que genera contraseña aleatoria y redirige a WhatsApp.
 - `Dashboard` — KPIs, alquileres vencidos, contratos próximos a vencer, marca de agua. Todos usan `#[Layout('layouts.app')]` y `#[Title('...')]`.
-- `Propietarios` — CRUD + conteo de propiedades alquiler/venta como links. DNI opcional. Al guardar, convierte nombre y apellido a Title Case.
+- `Propietarios` — CRUD + conteo de propiedades alquiler/venta como links. DNI opcional. Al guardar, convierte nombre y apellido a Title Case. Iconos rápidos naranja (alquiler) y violeta (venta) que navegan a la página de propiedades con modal pre-abierto vía `?abrirConPropietario={id}`.
 - `Inquilinos` — CRUD. Al guardar, convierte nombre, apellido y ocupación a Title Case.
-- `Propiedades` — CRUD alquileres con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
-- `PropiedadesVenta` — CRUD ventas con fotos, filtro por propietario (`filtroPropietario`), lightbox galería
-- `Contratos` — CRUD + modal de aumento de alquiler (% o valor fijo) + campo comisión en $. Botón naranja **"Aplicar Incrementos"** ejecuta el comando `contratos:incrementar` manualmente. En el sidebar se muestra como **"Contratos de alquiler"**.
-- `Pagos` — registro de cobros, descarga de recibo PDF (dos copias: ORIGINAL/DUPLICADO en una hoja). KPI separado en **Pendiente** (amarillo) y **Vencido** (rojo). Campo `descuento_categoria` para categorizar descuentos (selector aparece con Alpine.js cuando descuento > 0).
-- `Gastos` — CRUD gastos por propiedad. Categorías cargadas dinámicamente desde `CategoriaGasto`.
+- `Propiedades` — CRUD alquileres con fotos, filtro por propietario (`filtroPropietario`), lightbox galería. `#[Url] public ?int $abrirConPropietario = null` → `mount()` pre-abre el modal con propietario seleccionado. Búsqueda incluye inquilino actual.
+- `PropiedadesVenta` — CRUD ventas con fotos, filtro por propietario (`filtroPropietario`), lightbox galería. Mismo patrón `abrirConPropietario` que `Propiedades`.
+- `Contratos` — CRUD + modal de aumento de alquiler (% o valor fijo) + campo comisión en $. Sin botón "Aplicar Incrementos" (eliminado). En el sidebar se muestra como **"Contratos de alquiler"**. Botón impresora (violeta) genera PDF de plan de pagos.
+- `Pagos` — registro de cobros, descarga de recibo PDF (dos copias: ORIGINAL/DUPLICADO en una hoja). KPI separado en **Pendiente** (amarillo) y **Vencido** (rojo). Estados: `pagado`, `descontado`, `pendiente`, `vencido`. Botón Editar para pagos ya cobrados (`editarPago()`). Panel naranja de gastos disponibles del inmueble; al abrir "Cobrar" se auto-aplican todos los gastos disponibles y el estado queda en `descontado`.
+- `Gastos` — CRUD gastos por propiedad. Categorías cargadas dinámicamente desde `CategoriaGasto`. Columna "Estado" muestra si el gasto fue descontado en una cuota, en una liquidación, o está pendiente. Búsqueda por nombre de inquilino o propietario. Muestra dirección completa + propietario + inquilino activo.
 - `Liquidaciones` — generación de liquidaciones con descuento por % o valor fijo (ARS/USD), PDF dos copias en una hoja A4 con línea de corte. Estados: solo `emitida` y `pagada`. Gastos ingresados en el modal como lista dinámica (categoría + monto), se crean registros `Gasto` vinculados via `liquidacion_id` al guardar.
 - `Reportes` — reportes varios incluyendo propiedades vendidas. **No incluye**: rendición por propietario, gastos deducibles por categoría, ni cuotas cobradas por período (se eliminaron).
 - `Configuracion` — datos de la empresa, logo, categorías de gastos, credenciales de acceso al sistema.
@@ -122,6 +123,9 @@ Para inputs de texto con formato:
 - Siempre hacer `str_replace('.', '', $valor)` antes de cualquier operación numérica en PHP
 - Ejemplo en `Contratos.php`: `updatedMontoAlquiler()`, `updatedDepositoGarantia()`, `updatedValorAumento()`
 
+### wire:model y Alpine — no mezclar en el mismo input
+**Nunca usar `wire:model` y `x-model` de Alpine en el mismo `<input>`**: genera conflictos donde el valor no llega al servidor al ejecutar una acción. Si se necesita reactividad Alpine sobre un campo Livewire, usar `$wire.$watch('propiedad', ...)` en `x-init`, o usar `wire:model.blur` y lógica `@if` en Blade para mostrar/ocultar elementos dependientes.
+
 ### Cursor pointer global
 En `resources/css/app.css` hay una regla `@layer base` para mostrar la mano en todos los elementos clickeables. Después de editar este archivo correr `npm run build`.
 
@@ -139,16 +143,30 @@ El layout `resources/views/layouts/app.blade.php` usa flexbox. Para que `overflo
 `Propiedades` y `PropiedadesVenta` tienen `#[Url] public string $filtroPropietario = ''`.
 Al navegar desde Propietarios con `?filtroPropietario={id}`, la vista muestra un chip con el nombre y un botón para limpiar el filtro.
 
+### Abrir modal con datos pre-cargados desde otra página
+`Propiedades` y `PropiedadesVenta` tienen `#[Url] public ?int $abrirConPropietario = null`.
+En `mount()`: si está seteado, llama a `nueva()` y setea `$this->propietarioId`. Esto permite que desde Propietarios se navegue con `?abrirConPropietario={id}` y el modal se abra pre-completado.
+
+### Búsqueda con orWhere — siempre agrupar
+Al combinar búsqueda por texto (`orWhere`/`orWhereHas`) con filtros (`when`), el `or` debe estar dentro de un `where(fn($sub) => ...)` para evitar que "sangre" a otros filtros:
+```php
+->when($this->busqueda, fn($q) => $q->where(fn($sub) =>
+    $sub->whereHas('relacion1', ...)
+        ->orWhereHas('relacion2', ...)
+))
+```
+
 ### Modal de aumento de alquiler (Contratos)
 Botón ↑ (verde) en contratos activos/vencidos. Propiedades del componente:
 `modalAumento`, `aumentoContratoId`, `tipoAumento` (porcentaje|valor), `valorAumento`, `montoActualAumento`, `monedaAumento`, `actualizarCuotasAumento`.
 Métodos: `abrirModalAumento()`, `aplicarAumento()`, `cerrarModalAumento()`.
+`aplicarAumento()` aplica el porcentaje sobre el monto de **cada cuota individualmente** (no sobre el monto base del contrato), preservando los escalonamientos.
 
 ### Incremento automático de alquiler (Contratos)
 - Campos en `contratos`: `incremento_automatico` (bool), `porcentaje_incremento`, `meses_incremento`, `ultimo_incremento_at` (date nullable).
-- Comando `php artisan contratos:incrementar` aplica incrementos a contratos activos donde los meses transcurridos desde `ultimo_incremento_at` (o `fecha_inicio`) ≥ `meses_incremento`. Actualiza `monto_alquiler`, `ultimo_incremento_at` y cuotas pendientes/vencidas.
+- Al **crear** un contrato con `incremento_automatico = true`, `generarCuotasMensuales()` aplica el porcentaje escalonado directamente: cada `meses_incremento` meses el monto de la cuota se incrementa.
+- Comando `php artisan contratos:incrementar` también aplica incrementos a contratos activos (scheduler diario). Actualiza `monto_alquiler`, `ultimo_incremento_at` y cuotas pendientes/vencidas.
 - Scheduler en `routes/console.php`: `Schedule::command('contratos:incrementar')->dailyAt('08:00')`.
-- Botón **"Aplicar Incrementos"** (naranja) en la barra de Contratos llama a `ejecutarIncrementos()` que hace `Artisan::call('contratos:incrementar')`.
 - Para que corra automáticamente en producción: configurar cron en cPanel → `* * * * * php artisan schedule:run`.
 
 ### Gastos en Liquidaciones
@@ -158,10 +176,38 @@ Métodos: `abrirModalAumento()`, `aplicarAumento()`, `cerrarModalAumento()`.
 - `total_gastos` en la liquidación se calcula sumando `$this->nuevosGastos`.
 - El PDF busca gastos por: 1) `liquidacion->gastos()`, 2) propiedad+mes/año, 3) todos los gastos de la propiedad sin `liquidacion_id`.
 
+### Gastos relacionados en Pagos (descuento automático)
+- Al abrir el modal "Cobrar" para un pago, `cargarGastos()` busca los gastos del inmueble que estén sin vincular (`pago_id IS NULL`) del período o de los últimos 3 meses sin liquidar.
+- Si hay gastos disponibles, se auto-aplican todos: `$this->descuento = suma`, `$this->estado = 'descontado'`, `$this->gastosAplicadosIds = [ids]`.
+- El modal muestra aviso verde "Descuento aplicado automáticamente" y panel naranja con los gastos disponibles (los aplicados muestran "✓ Aplicado").
+- Al guardar, los gastos en `gastosAplicadosIds` reciben `pago_id = $pagoId` en la tabla `gastos`, marcándolos como usados.
+- Al editar un pago existente, primero se anulan los vínculos previos (`pago_id = NULL`) antes de re-vincular.
+- El campo descuento usa solo `wire:model.blur` (sin Alpine `x-model`) para evitar conflictos de binding. La categoría de descuento aparece con `@if($descuento > 0)`.
+
+### Estados de Pago
+Los pagos tienen cuatro estados posibles:
+- `pagado` — cobrado sin descuento de gasto (badge verde)
+- `descontado` — cobrado con un gasto del inmueble aplicado como descuento (badge teal)
+- `pendiente` — aún no vencido (badge amarillo)
+- `vencido` — pasó la fecha de vencimiento sin cobrar (badge rojo)
+
+El KPI "Cobrado" suma `estado IN ('pagado', 'descontado')`. El botón "Cobrar" se oculta cuando el estado es `pagado` o `descontado`.
+
+### Período abreviado en Pagos
+`Pago::getPeriodoLabelAttribute()` devuelve las primeras 3 letras del mes + 2 últimos dígitos del año: `"Ene 26"`, `"May 26"`, etc.
+
 ### Descuento con categoría en Pagos
 - Columna `descuento_categoria` (string nullable) en tabla `pagos`.
-- En el modal de pago, cuando `descuento > 0`, Alpine.js (`x-show`) muestra un select de categorías. Se usa `x-model` junto a `wire:model` para no disparar requests Livewire en cada tecla.
+- En el modal, cuando `$descuento > 0` (evaluado en Blade con `@if`), se muestra un select de categorías vinculado con `wire:model="descuentoCategoria"`.
 - El recibo PDF muestra `"Descuento — Categoría"` si hay categoría, o solo `"Descuento"` si no.
+- Cuando el estado es `descontado`, el badge del recibo dice "PAGO CON DESCUENTO REGISTRADO".
+
+### Estado de Gasto (columna "Estado" en lista)
+La columna "Estado" en la lista de gastos muestra:
+- Badge verde **"✓ Descontado"** cuando `pago_id` está seteado (fue usado como descuento en una cuota). Al pasar el mouse muestra el período de la cuota.
+- Badge azul **"En liquidación"** cuando `liquidacion_id` está seteado.
+- Texto gris "Deducible" si `deducible = true` pero aún no usado.
+- Texto gris claro "No ded." si `deducible = false`.
 
 ### Rescindir vs Eliminar contratos
 Dos acciones distintas en la tabla de contratos:
@@ -194,10 +240,12 @@ El modal de nueva liquidación tiene un toggle **% Porcentaje / $ Valor fijo**:
 - Propiedades: `nuevaDescuentoTipo` ('porcentaje'|'valor'), `nuevaDescuentoValorFijo`, `nuevaDescuentoMoneda`
 - La columna `descuento_tipo` en la tabla `liquidaciones` guarda cómo se ingresó el descuento
 - El PDF muestra `(X%)` junto a "Comisión inmobiliaria" solo si `descuento_tipo === 'porcentaje'`
+- Al seleccionar contrato, `updatedNuevaContratoId()` pre-carga la comisión: si el contrato tiene `comision_monto` fijo lo usa como valor fijo; si tiene `comision_porcentaje` lo usa como porcentaje. El monto base se toma del pago del período si existe.
 
 ### PDFs con dos copias
-- **Recibo de pago** (`resources/views/pdf/recibo.blade.php`): dos copias en una hoja A4 separadas por línea de corte `✂ CORTE ✂`. Cada copia tiene etiqueta ORIGINAL / DUPLICADO. No muestra el propietario. Si hay descuento con categoría muestra `"Descuento — Categoría"`.
+- **Recibo de pago** (`resources/views/pdf/recibo.blade.php`): dos copias en una hoja A4 separadas por línea de corte `✂ CORTE ✂`. Cada copia tiene etiqueta ORIGINAL / DUPLICADO. No muestra el propietario. Si hay descuento con categoría muestra `"Descuento — Categoría"`. Si el estado es `descontado` el badge dice "PAGO CON DESCUENTO REGISTRADO".
 - **Liquidación** (`resources/views/pdf/liquidacion.blade.php`): dos copias en **una sola hoja A4** con línea de corte (no page-break). Muestra cada gasto como `"Gastos deducibles — Categoría"` en el resumen. Los gastos se obtienen via `liquidacion->gastos()` (por `liquidacion_id`), con fallback a propiedad+mes/año, y luego a todos los gastos de la propiedad sin filtro.
+- **Plan de pagos** (`resources/views/pdf/plan_pagos.blade.php`): dos copias en una hoja A4 portrait con `✂ CORTE ✂`. Muestra tabla completa de cuotas con monto, vencimiento, estado y fecha de pago. Ruta: `contratos.plan-pagos`. Botón impresora violeta en la tabla de contratos.
 - Ambos PDFs muestran `$config->razon_social ?: $config->nombre` en el encabezado y firma.
 - El recibo recibe `$config` desde la closure en `routes/web.php`. La liquidación lo recibe desde `Liquidaciones::generarPdf()`.
 
@@ -217,6 +265,13 @@ El modal de nueva liquidación tiene un toggle **% Porcentaje / $ Valor fijo**:
 
 ### Validaciones — mensajes en español
 Siempre definir mensajes personalizados en `$messages` para todas las reglas usadas (incluyendo `.min`, `.required`, `.numeric`, etc.) para evitar que aparezcan claves crudas tipo `validation.min.string`.
+
+### Sidebar — estructura y etiquetas
+- Sección **Gestión**: Dashboard, Propietarios, Inquilinos, Casas en alquiler, Casas en venta, Contratos de alquiler
+- Sección **Pagos**: Gastos deducibles, Alquileres, Propietarios (liquidaciones)
+- Sección **Reportes**: Reportes
+- Sección **Sistema**: Configuración
+- Encabezados de sección en `text-amber-400`
 
 ---
 
@@ -247,6 +302,7 @@ Todas las migraciones en `database/migrations/` están aplicadas, incluyendo:
 - `2026_05_05_235237_create_categorias_gastos_table.php` (tabla `categorias_gastos` con seed de 6 categorías)
 - `2026_05_06_185600_add_ultimo_incremento_to_contratos_table.php` (campo `ultimo_incremento_at` date nullable en `contratos`)
 - `2026_05_06_223709_add_descuento_categoria_to_pagos_table.php` (campo `descuento_categoria` string nullable en `pagos`)
+- `2026_05_08_000001_add_pago_id_to_gastos_table.php` (campo `pago_id` FK nullable → `pagos`, `nullOnDelete` en `gastos`)
 
 ---
 
