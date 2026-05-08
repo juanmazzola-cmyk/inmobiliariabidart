@@ -24,6 +24,8 @@ class Contratos extends Component
     public string $busqueda = '';
     #[Url]
     public string $filtroEstado = '';
+    #[Url]
+    public ?int $abrirConPropiedad = null;
 
     public bool $modalAbrir = false;
     public ?int $contratoId = null;
@@ -86,6 +88,14 @@ class Contratos extends Component
     public function updatingBusqueda(): void
     {
         $this->resetPage();
+    }
+
+    public function mount(): void
+    {
+        if ($this->abrirConPropiedad) {
+            $this->nuevo();
+            $this->propiedadId = $this->abrirConPropiedad;
+        }
     }
 
     public function updatedMontoAlquiler(): void
