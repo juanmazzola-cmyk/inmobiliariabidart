@@ -83,12 +83,12 @@ class Pagos extends Component
             ->when($this->filtroMes,      fn($q) => $q->where('periodo_mes', $this->filtroMes))
             ->when($this->filtroAnio,     fn($q) => $q->where('periodo_anio', $this->filtroAnio))
             ->when($this->filtroContrato, fn($q) => $q->where('contrato_id', $this->filtroContrato))
-            ->orderByRaw("FIELD(estado, 'vencido', 'pendiente', 'pagado', 'parcial')")
+            ->orderByRaw("FIELD(estado, 'vencido', 'pendiente', 'pagado', 'descontado', 'parcial')")
             ->orderByDesc('periodo_anio')
             ->orderByDesc('periodo_mes')
             ->paginate(20);
 
-        $totalCobrado = Pago::where('estado', 'pagado')
+        $totalCobrado = Pago::whereIn('estado', ['pagado', 'descontado'])
             ->when($this->filtroMes,  fn($q) => $q->where('periodo_mes', $this->filtroMes))
             ->when($this->filtroAnio, fn($q) => $q->where('periodo_anio', $this->filtroAnio))
             ->sum('total');
@@ -157,18 +157,15 @@ class Pagos extends Component
         $this->gastosAplicadosIds = [];
         $this->resetValidation();
 
-        // Cargar gastos y auto-aplicar los del período
+        // Cargar gastos y auto-aplicar todos los disponibles del inmueble
         $this->cargarGastos();
-        $gastosDelPeriodo = collect($this->gastosDisponibles)
-            ->filter(fn($g) => $g['mes'] === $this->periodoMes && $g['anio'] === $this->periodoAnio)
-            ->values();
-
-        if ($gastosDelPeriodo->isNotEmpty()) {
-            $this->descuento          = (string)(int)$gastosDelPeriodo->sum('monto');
-            $this->descuentoCategoria = $gastosDelPeriodo->count() === 1
-                ? $gastosDelPeriodo->first()['categoria']
-                : '';
-            $this->gastosAplicadosIds = $gastosDelPeriodo->pluck('id')->toArray();
+        if (!empty($this->gastosDisponibles)) {
+            $todos = collect($this->gastosDisponibles);
+            $this->descuento          = (string)(int)$todos->sum('monto');
+            $categorias               = $todos->pluck('categoria')->unique();
+            $this->descuentoCategoria = $categorias->count() === 1 ? $categorias->first() : '';
+            $this->gastosAplicadosIds = $todos->pluck('id')->toArray();
+            $this->estado             = 'descontado';
         }
 
         $this->modalAbrir = true;
@@ -260,7 +257,7 @@ class Pagos extends Component
 
         $datos = [
             'contrato_id'       => $this->contratoId,
-            'fecha_pago'        => $this->estado === 'pagado' ? $this->fechaPago : null,
+            'fecha_pago'        => in_array($this->estado, ['pagado', 'descontado']) ? $this->fechaPago : null,
             'fecha_vencimiento' => $this->fechaVencimiento,
             'periodo_mes'       => $this->periodoMes,
             'periodo_anio'      => $this->periodoAnio,
