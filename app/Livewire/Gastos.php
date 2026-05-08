@@ -59,6 +59,7 @@ class Gastos extends Component
         $gastos = Gasto::with([
                 'propiedad.propietario',
                 'propiedad.contratos' => fn($q) => $q->where('estado', 'activo')->with('inquilino'),
+                'pago',
             ])
             ->when($this->busqueda, fn($q) =>
                 $q->whereHas('propiedad.contratos.inquilino', fn($i) =>

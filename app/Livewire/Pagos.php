@@ -32,6 +32,7 @@ class Pagos extends Component
     public bool $modalAbrir = false;
     public ?int $pagoId = null;
     public array $gastosDisponibles = [];
+    public array $gastosAplicadosIds = [];
 
     public ?int $contratoId = null;
     public string $fechaPago = '';
@@ -131,6 +132,7 @@ class Pagos extends Component
         $this->periodoAnio     = now()->year;
         $this->fechaPago       = now()->format('Y-m-d');
         $this->fechaVencimiento = now()->format('Y-m-d');
+        $this->gastosAplicadosIds = [];
         $this->resetValidation();
         $this->modalAbrir      = true;
     }
@@ -146,14 +148,30 @@ class Pagos extends Component
         $this->fechaPago        = now()->format('Y-m-d');
         $this->monto            = $pago->monto;
         $this->recargo          = $pago->recargo ?? '0';
-        $this->descuento           = $pago->descuento ?? '0';
-        $this->descuentoCategoria  = $pago->descuento_categoria ?? '';
-        $this->medioPago           = 'efectivo';
+        $this->descuento        = '0';
+        $this->descuentoCategoria = '';
+        $this->medioPago        = 'efectivo';
         $this->estado           = 'pagado';
         $this->numeroComprobante = '';
         $this->observaciones    = $pago->observaciones ?? '';
+        $this->gastosAplicadosIds = [];
         $this->resetValidation();
-        $this->modalAbrir       = true;
+
+        // Cargar gastos y auto-aplicar los del período
+        $this->cargarGastos();
+        $gastosDelPeriodo = collect($this->gastosDisponibles)
+            ->filter(fn($g) => $g['mes'] === $this->periodoMes && $g['anio'] === $this->periodoAnio)
+            ->values();
+
+        if ($gastosDelPeriodo->isNotEmpty()) {
+            $this->descuento          = (string)(int)$gastosDelPeriodo->sum('monto');
+            $this->descuentoCategoria = $gastosDelPeriodo->count() === 1
+                ? $gastosDelPeriodo->first()['categoria']
+                : '';
+            $this->gastosAplicadosIds = $gastosDelPeriodo->pluck('id')->toArray();
+        }
+
+        $this->modalAbrir = true;
     }
 
     public function editarPago(int $id): void
@@ -200,6 +218,7 @@ class Pagos extends Component
         if (!$contrato) return;
 
         $this->gastosDisponibles = Gasto::where('propiedad_id', $contrato->propiedad_id)
+            ->whereNull('pago_id')
             ->where(fn($q) =>
                 $q->whereMonth('fecha', $this->periodoMes)
                   ->whereYear('fecha', $this->periodoAnio)
@@ -215,6 +234,8 @@ class Pagos extends Component
                 'concepto' => $g->concepto,
                 'categoria'=> $g->categoria,
                 'monto'    => (float) $g->monto,
+                'mes'      => $g->fecha->month,
+                'anio'     => $g->fecha->year,
             ])
             ->toArray();
     }
@@ -223,8 +244,9 @@ class Pagos extends Component
     {
         $gasto = Gasto::find($gastoId);
         if (!$gasto) return;
-        $this->descuento         = (string) (int) $gasto->monto;
+        $this->descuento          = (string) (int) $gasto->monto;
         $this->descuentoCategoria = $gasto->categoria;
+        $this->gastosAplicadosIds = [$gastoId];
     }
 
     public function guardar(): void
@@ -254,11 +276,20 @@ class Pagos extends Component
         ];
 
         if ($this->pagoId) {
+            // Desligar gastos previos de este pago antes de re-vincular
+            Gasto::where('pago_id', $this->pagoId)->update(['pago_id' => null]);
             Pago::findOrFail($this->pagoId)->update($datos);
+            $pagoIdGuardado = $this->pagoId;
             $msg = 'Pago registrado correctamente.';
         } else {
-            Pago::create($datos);
+            $pagoCreado = Pago::create($datos);
+            $pagoIdGuardado = $pagoCreado->id;
             $msg = 'Pago creado correctamente.';
+        }
+
+        // Marcar los gastos aplicados como descontados en este pago
+        if (!empty($this->gastosAplicadosIds) && $descuento > 0) {
+            Gasto::whereIn('id', $this->gastosAplicadosIds)->update(['pago_id' => $pagoIdGuardado]);
         }
 
         $this->cerrarModal();
@@ -287,8 +318,9 @@ class Pagos extends Component
 
     public function cerrarModal(): void
     {
-        $this->modalAbrir        = false;
-        $this->gastosDisponibles = [];
+        $this->modalAbrir         = false;
+        $this->gastosDisponibles  = [];
+        $this->gastosAplicadosIds = [];
         $this->resetValidation();
     }
 }

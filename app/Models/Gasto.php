@@ -10,6 +10,7 @@ class Gasto extends Model
     protected $fillable = [
         'propiedad_id',
         'liquidacion_id',
+        'pago_id',
         'concepto',
         'categoria',
         'monto',
@@ -34,6 +35,11 @@ class Gasto extends Model
     public function liquidacion(): BelongsTo
     {
         return $this->belongsTo(Liquidacion::class);
+    }
+
+    public function pago(): BelongsTo
+    {
+        return $this->belongsTo(Pago::class);
     }
 
     public function getCategoriaLabelAttribute(): string

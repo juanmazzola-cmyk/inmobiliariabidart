@@ -234,16 +234,40 @@
                     </div>
                 </div>
 
+                {{-- Aviso: gastos auto-aplicados del período --}}
+                @if(count($gastosAplicadosIds) > 0)
+                <div class="bg-green-50 border border-green-200 rounded-xl p-3 flex items-start gap-2">
+                    <svg class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <p class="text-xs font-semibold text-green-800">Descuento aplicado automáticamente</p>
+                        <p class="text-xs text-green-700">
+                            Se {{ count($gastosAplicadosIds) === 1 ? 'encontró 1 gasto' : 'encontraron ' . count($gastosAplicadosIds) . ' gastos' }}
+                            del período y {{ count($gastosAplicadosIds) === 1 ? 'fue aplicado' : 'fueron aplicados' }} como descuento.
+                        </p>
+                    </div>
+                </div>
+                @endif
+
                 {{-- Gastos disponibles del inmueble --}}
                 @if(count($gastosDisponibles) > 0)
                 <div class="bg-orange-50 border border-orange-100 rounded-xl p-3">
-                    <p class="text-xs font-semibold text-orange-700 mb-2">Gastos del inmueble — clic para aplicar como descuento</p>
+                    <p class="text-xs font-semibold text-orange-700 mb-2">
+                        Gastos del inmueble — clic para cambiar el descuento
+                    </p>
                     <div class="space-y-1">
                         @foreach($gastosDisponibles as $g)
                         <button type="button" wire:click="aplicarGasto({{ $g['id'] }})"
-                            class="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors text-xs">
+                            class="w-full flex items-center justify-between px-3 py-1.5 bg-white border rounded-lg transition-colors text-xs
+                                {{ in_array($g['id'], $gastosAplicadosIds) ? 'border-green-400 bg-green-50' : 'border-orange-200 hover:bg-orange-100' }}">
                             <span class="text-gray-700">{{ ucfirst($g['concepto']) }} <span class="text-gray-400">— {{ $g['categoria'] }}</span></span>
-                            <span class="font-semibold text-orange-600">$ {{ number_format($g['monto'], 0, ',', '.') }}</span>
+                            <div class="flex items-center gap-2">
+                                @if(in_array($g['id'], $gastosAplicadosIds))
+                                    <span class="text-green-600 text-xs">✓ Aplicado</span>
+                                @endif
+                                <span class="font-semibold text-orange-600">$ {{ number_format($g['monto'], 0, ',', '.') }}</span>
+                            </div>
                         </button>
                         @endforeach
                     </div>

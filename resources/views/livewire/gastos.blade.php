@@ -35,7 +35,7 @@
                         <th class="px-4 py-3 text-left">Categoría</th>
                         <th class="px-4 py-3 text-left">Proveedor</th>
                         <th class="px-4 py-3 text-left">Comprobante</th>
-                        <th class="px-4 py-3 text-center">Deducible</th>
+                        <th class="px-4 py-3 text-center">Estado</th>
                         <th class="px-4 py-3 text-right">Monto</th>
                         <th class="px-4 py-3 text-center">Acciones</th>
                     </tr>
@@ -61,10 +61,19 @@
                         <td class="px-4 py-3 text-gray-600">{{ $g->proveedor ? ucfirst($g->proveedor) : '—' }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ $g->comprobante ?? '—' }}</td>
                         <td class="px-4 py-3 text-center">
-                            @if($g->deducible)
-                                <span class="text-green-600 font-medium text-xs">Sí</span>
+                            @if($g->pago_id)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                                      title="Descontado en cuota {{ $g->pago?->periodo_label }}">
+                                    ✓ Descontado
+                                </span>
+                            @elseif($g->liquidacion_id)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                    En liquidación
+                                </span>
+                            @elseif($g->deducible)
+                                <span class="text-gray-500 text-xs">Deducible</span>
                             @else
-                                <span class="text-gray-400 text-xs">No</span>
+                                <span class="text-gray-300 text-xs">No ded.</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-right font-bold text-gray-900">
