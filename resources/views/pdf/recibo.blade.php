@@ -149,9 +149,7 @@
     </table>
 
     <div style="text-align:center; margin: 10px 0;">
-        <span class="badge-pagado">
-            &#10003; {{ $pago->estado === 'descontado' ? 'PAGO CON DESCUENTO REGISTRADO' : 'PAGO REGISTRADO' }}
-        </span>
+        <span class="badge-pagado">&#10003; PAGO REGISTRADO</span>
     </div>
 
     @if ($pago->observaciones)

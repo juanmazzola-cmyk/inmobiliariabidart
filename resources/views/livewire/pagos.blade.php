@@ -55,7 +55,6 @@
         <select wire:model.live="filtroEstado" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Todos</option>
             <option value="pagado">Pagado</option>
-            <option value="descontado">Descontado</option>
             <option value="pendiente">Pendiente</option>
             <option value="vencido">Vencido</option>
         </select>
@@ -117,22 +116,20 @@
                             {{ $pago->medio_pago_label }}
                         </td>
                         <td class="px-4 py-3 text-center">
-                            @php
-                                $estadoBadge = match($pago->estado) {
-                                    'pagado'     => ['Pagado',     'bg-green-100 text-green-800'],
-                                    'descontado' => ['Descontado', 'bg-teal-100 text-teal-700'],
-                                    'vencido'    => ['Vencido',    'bg-red-100 text-red-800'],
-                                    'pendiente'  => ['Pendiente',  'bg-yellow-100 text-yellow-800'],
-                                    default      => ['Parcial',    'bg-gray-100 text-gray-700'],
-                                };
-                            @endphp
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $estadoBadge[1] }}">
-                                {{ $estadoBadge[0] }}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {{ $pago->estado === 'pagado'   ? 'bg-green-100 text-green-800' :
+                                   ($pago->estado === 'vencido' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                {{ match($pago->estado) {
+                                    'pagado'   => 'Pagado',
+                                    'vencido'  => 'Vencido',
+                                    'pendiente'=> 'Pendiente',
+                                    default    => 'Parcial'
+                                } }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-1">
-                                @if (!in_array($pago->estado, ['pagado', 'descontado']))
+                                @if ($pago->estado !== 'pagado')
                                     <button wire:click="abrirModalCobro({{ $pago->id }})"
                                         class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +177,7 @@
                 <h3 class="font-semibold text-gray-800">
                     @if (!$pagoId)
                         Nuevo Pago Manual
-                    @elseif (in_array($estado, ['pagado', 'descontado']))
+                    @elseif ($estado === 'pagado')
                         Editar Pago
                     @else
                         Registrar cobro de cuota
@@ -319,7 +316,6 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                         <select wire:model="estado" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="pagado">Pagado</option>
-                            <option value="descontado">Descontado</option>
                             <option value="pendiente">Pendiente</option>
                         </select>
                     </div>
