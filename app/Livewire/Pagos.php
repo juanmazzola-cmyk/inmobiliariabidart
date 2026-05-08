@@ -73,12 +73,12 @@ class Pagos extends Component
     public function render()
     {
         $pagos = Pago::with(['contrato.propiedad.propietario', 'contrato.inquilino'])
-            ->when($this->busqueda, fn($q) =>
-                $q->whereHas('contrato.inquilino', fn($i) =>
+            ->when($this->busqueda, fn($q) => $q->where(fn($sub) =>
+                $sub->whereHas('contrato.inquilino', fn($i) =>
                     $i->where('apellido', 'like', "%{$this->busqueda}%")
                       ->orWhere('nombre', 'like', "%{$this->busqueda}%")
                 )
-            )
+            ))
             ->when($this->filtroEstado,   fn($q) => $q->where('estado', $this->filtroEstado))
             ->when($this->filtroMes,      fn($q) => $q->where('periodo_mes', $this->filtroMes))
             ->when($this->filtroAnio,     fn($q) => $q->where('periodo_anio', $this->filtroAnio))
