@@ -34,14 +34,22 @@ try {
     echo "✗ ERROR usuario: " . $e->getMessage() . "\n";
 }
 
-// Últimas líneas del log de Laravel
-echo "\n--- Últimas líneas del log ---\n";
+// Último error del log de Laravel
+echo "\n--- Último error del log ---\n";
 try {
     $logPath = __DIR__ . '/../storage/logs/laravel.log';
     if (file_exists($logPath)) {
-        $lines = file($logPath);
-        $last = array_slice($lines, -60);
-        foreach ($last as $line) echo htmlspecialchars($line);
+        $content = file_get_contents($logPath);
+        // Buscar la última entrada [production.ERROR o local.ERROR]
+        $pos = strrpos($content, '.ERROR:');
+        if ($pos !== false) {
+            // Retroceder hasta el inicio de esa línea
+            $start = strrpos($content, '[', $pos - strlen($content));
+            $excerpt = substr($content, $start, 3000);
+            echo htmlspecialchars($excerpt);
+        } else {
+            echo "No se encontraron errores en el log.\n";
+        }
     } else {
         echo "Log no encontrado en: $logPath\n";
     }
