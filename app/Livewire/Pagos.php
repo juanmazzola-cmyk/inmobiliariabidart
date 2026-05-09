@@ -300,7 +300,8 @@ class Pagos extends Component
             'contrato.inquilino',
         ])->findOrFail($id);
 
-        $pdf = Pdf::loadView('pdf.recibo', compact('pago'))
+        $config = \App\Models\Configuracion::get();
+        $pdf = Pdf::loadView('pdf.recibo', compact('pago', 'config'))
             ->setPaper('a4', 'portrait');
 
         $nombre = 'recibo_' . str_pad($pago->id, 6, '0', STR_PAD_LEFT)
