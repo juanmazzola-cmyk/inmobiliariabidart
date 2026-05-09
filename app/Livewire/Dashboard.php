@@ -50,7 +50,7 @@ class Dashboard extends Component
             ->where('periodo_anio', $anioActual)
             ->sum('total');
 
-        $alquileresVencidos = Pago::with(['contrato.propiedad', 'contrato.inquilino'])
+        $alquileresVencidos = Pago::with(['contrato.propiedad.propietario', 'contrato.inquilino'])
             ->where('estado', 'pendiente')
             ->where('fecha_vencimiento', '<', now()->subDays(11))
             ->orderBy('fecha_vencimiento')

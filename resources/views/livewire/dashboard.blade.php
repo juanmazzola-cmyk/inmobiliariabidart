@@ -128,6 +128,9 @@
                         <p class="text-xs text-gray-400">
                             {{ $pago->contrato->propiedad->tipo_label }} — {{ $pago->periodo_label }}
                         </p>
+                        @if($pago->contrato->propiedad->propietario)
+                        <p class="text-xs text-gray-400">{{ $pago->contrato->propiedad->propietario->nombre_completo }}</p>
+                        @endif
                     </div>
                     <div class="text-right">
                         <p class="text-sm font-bold text-red-600">$ {{ number_format($pago->total, 0, ',', '.') }}</p>
