@@ -188,6 +188,7 @@ class Pagos extends Component
         $this->numeroComprobante = $pago->numero_comprobante ?? '';
         $this->estado            = $pago->estado;
         $this->observaciones     = $pago->observaciones ?? '';
+        $this->gastosAplicadosIds = Gasto::where('pago_id', $id)->pluck('id')->toArray();
         $this->resetValidation();
         $this->modalAbrir        = true;
     }

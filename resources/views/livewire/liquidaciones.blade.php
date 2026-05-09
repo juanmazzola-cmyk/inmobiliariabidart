@@ -72,7 +72,7 @@
                             {{ str_pad($liq->id, 6, '0', STR_PAD_LEFT) }}
                         </td>
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $liq->periodo_label }}</td>
-                        <td class="px-4 py-3 text-gray-700">{{ $liq->propietario->nombre_completo }}</td>
+                        <td class="px-4 py-3 text-gray-700">{{ $liq->propietario?->nombre_completo ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600 text-xs">
                             {{ $liq->propiedad->direccion_completa }}
                         </td>
@@ -219,7 +219,7 @@
                                 <option value="{{ $c->id }}">
                                     {{ $c->inquilino->nombre_completo }} —
                                     {{ $c->propiedad->direccion_completa }}
-                                    (Prop: {{ $c->propiedad->propietario->apellido }})
+                                    {{ $c->propiedad->propietario ? '(Prop: ' . $c->propiedad->propietario->apellido . ')' : '' }}
                                 </option>
                             @endforeach
                         </select>
