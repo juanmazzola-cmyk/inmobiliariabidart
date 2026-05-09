@@ -28,7 +28,7 @@
 
     {{-- KPIs fila 1: contadores --}}
     <div class="relative z-10 grid grid-cols-3 gap-4">
-        <a href="{{ route('propiedades.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-orange-200 transition-all">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Alquileres</p>
@@ -41,9 +41,9 @@
                     </svg>
                 </div>
             </div>
-        </a>
+        </div>
 
-        <a href="{{ route('propiedades-venta.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-purple-200 transition-all">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">En Venta</p>
@@ -56,9 +56,9 @@
                     </svg>
                 </div>
             </div>
-        </a>
+        </div>
 
-        <a href="{{ route('contratos.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-green-200 transition-all">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contratos Activos</p>
@@ -75,12 +75,12 @@
                     </svg>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
 
     {{-- KPIs fila 2: importes --}}
     <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <a href="{{ route('pagos.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cobranza del Mes</p>
@@ -91,9 +91,9 @@
                     <span class="text-blue-600 font-bold text-xl leading-none">$</span>
                 </div>
             </div>
-        </a>
+        </div>
 
-        <a href="{{ route('pagos.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-red-200 transition-all">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saldo Pendiente del Mes</p>
@@ -106,7 +106,7 @@
                     </svg>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
 
     {{-- Tablas inferiores --}}
