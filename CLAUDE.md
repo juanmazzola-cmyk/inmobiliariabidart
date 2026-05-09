@@ -54,7 +54,7 @@ Todas las rutas (excepto login) están dentro de `Route::middleware('auth')->gro
 ### Componentes Livewire (`app/Livewire/`)
 
 - `Login` — usa `#[Layout('layouts.guest')]`. Autentica por campo `name` (no email). Tiene "¿Olvidaste tu contraseña?" que genera contraseña aleatoria y redirige a WhatsApp.
-- `Dashboard` — KPIs en dos filas. Fila 1: Alquileres (naranja, edificio), En Venta (violeta, casa), Contratos Activos (verde). Fila 2: Cobranza del Mes (azul, signo $), Saldo Pendiente (rojo). Marca de agua, alquileres vencidos, contratos próximos a vencer.
+- `Dashboard` — KPIs en dos filas (solo informativos, no son links). Fila 1: Alquileres (naranja, edificio), En Venta (violeta, casa), Contratos Activos (verde). Fila 2: Cobranza del Mes (azul, signo $), Saldo Pendiente (rojo). Marca de agua, alquileres vencidos, contratos próximos a vencer. Ver sección "Dashboard" más abajo para detalles de las tablas inferiores.
 - `Propietarios` — CRUD + conteo de propiedades alquiler/venta como texto no clickeable. DNI opcional. Al guardar, convierte nombre y apellido a Title Case. Iconos de acción: naranja (edificio → alquiler), violeta (casa → venta), azul (editar), rojo (eliminar). Navegan con modal pre-abierto vía `?abrirConPropietario={id}`.
 - `Inquilinos` — CRUD. Al guardar, convierte nombre, apellido y ocupación a Title Case.
 - `Propiedades` — CRUD alquileres con fotos, filtro por propietario (`filtroPropietario`), lightbox galería. `#[Url] public ?int $abrirConPropietario = null` → `mount()` pre-abre el modal con propietario seleccionado. Búsqueda incluye inquilino actual. Íconos de card: verde (nuevo contrato), azul (editar), rojo (eliminar). El texto "X contrato/s" es no clickeable.
@@ -64,7 +64,7 @@ Todas las rutas (excepto login) están dentro de `Route::middleware('auth')->gro
 - `Gastos` — CRUD gastos por propiedad. Categorías cargadas dinámicamente desde `CategoriaGasto`. Columna "Estado" muestra si el gasto fue descontado en una cuota, en una liquidación, o está pendiente. Búsqueda por nombre de inquilino o propietario. Muestra dirección completa + propietario + inquilino activo.
 - `Liquidaciones` — generación de liquidaciones con descuento por % o valor fijo (ARS/USD), PDF dos copias en una hoja A4 con línea de corte. Estados: solo `emitida` y `pagada`. Gastos ingresados en el modal como lista dinámica (categoría + monto), se crean registros `Gasto` vinculados via `liquidacion_id` al guardar.
 - `Reportes` — reportes varios incluyendo propiedades vendidas. **No incluye**: rendición por propietario, gastos deducibles por categoría, ni cuotas cobradas por período (se eliminaron).
-- `Configuracion` — datos de la empresa, logo, categorías de gastos, credenciales de acceso al sistema.
+- `Configuracion` — datos de la empresa, categorías de gastos, credenciales de acceso al sistema. **La sección de subir logo fue eliminada** — el campo `logo_path` existe en BD pero no se usa desde la UI.
 
 ---
 
@@ -191,7 +191,7 @@ Métodos: `abrirModalAumento()`, `aplicarAumento()`, `cerrarModalAumento()`.
 - Si hay gastos disponibles, se auto-aplican todos: `$this->descuento = suma`, `$this->estado = 'pagado'`, `$this->gastosAplicadosIds = [ids]`.
 - El modal muestra aviso verde "Descuento aplicado automáticamente" y panel naranja con los gastos disponibles (los aplicados muestran "✓ Aplicado").
 - Al guardar, los gastos en `gastosAplicadosIds` reciben `pago_id = $pagoId` en la tabla `gastos`, marcándolos como usados.
-- Al editar un pago existente, primero se anulan los vínculos previos (`pago_id = NULL`) antes de re-vincular.
+- Al editar un pago existente (`editarPago()`), se cargan los `gastosAplicadosIds` previos del pago, luego se anulan los vínculos y se re-vinculan al guardar. Esto evita que los gastos queden huérfanos.
 - El campo descuento usa solo `wire:model.blur` (sin Alpine `x-model`) para evitar conflictos de binding. La categoría de descuento aparece con `@if($descuento > 0)`.
 
 ### Estados de Pago
@@ -226,7 +226,9 @@ Dos acciones distintas en la tabla de contratos:
 La FK `contrato_id` en `pagos` y `liquidaciones` usa `ON DELETE CASCADE` (migración `2026_05_01_022406_add_cascade_delete_to_pagos_and_liquidaciones.php`).
 
 ### Fotos de propiedades (alquiler y venta)
-- Se guardan en `storage/app/public/propiedades-alquiler/` y `storage/app/public/propiedades-venta/`
+- **En producción (DonWeb):** se guardan en `public/storage/propiedades-alquiler/` y `public/storage/propiedades-venta/` (directorio real, sin symlink). El disco `public` en `config/filesystems.php` usa `public_path('storage')` como root. El `.cpanel.yml` crea estas carpetas con `mkdir -p` en cada deploy.
+- **En local:** el disco `public` apunta a `public/storage/` que es un symlink a `storage/app/public/`, por lo que los archivos terminan en `storage/app/public/propiedades-alquiler/` igual que antes.
+- Se accede siempre via `asset('storage/' . $path)` — sin cambios en vistas.
 - Columna `fotos JSON nullable` en ambas tablas, cast `'fotos' => 'array'` en los modelos
 - Accessor `getPrimeraFotoAttribute()` en `Propiedad` y `PropiedadVenta`
 - Los componentes usan `WithFileUploads`, propiedades: `$fotosActuales`, `$fotosEliminar`, `$nuevasFotos`
@@ -256,7 +258,7 @@ El modal de nueva liquidación tiene un toggle **% Porcentaje / $ Valor fijo**:
 - **Liquidación** (`resources/views/pdf/liquidacion.blade.php`): dos copias en **una sola hoja A4** con línea de corte (no page-break). Muestra cada gasto como `"Gastos deducibles — Categoría"` en el resumen. Los gastos se obtienen via `liquidacion->gastos()` (por `liquidacion_id`), con fallback a propiedad+mes/año, y luego a todos los gastos de la propiedad sin filtro.
 - **Plan de pagos** (`resources/views/pdf/plan_pagos.blade.php`): dos copias en una hoja A4 portrait con `✂ CORTE ✂`. Muestra tabla completa de cuotas con monto, vencimiento, estado y fecha de pago. Ruta: `contratos.plan-pagos`. Botón impresora violeta en la tabla de contratos.
 - Ambos PDFs muestran `$config->razon_social ?: $config->nombre` en el encabezado y firma.
-- El recibo recibe `$config` desde la closure en `routes/web.php`. La liquidación lo recibe desde `Liquidaciones::generarPdf()`.
+- El recibo recibe `$config` desde la closure en `routes/web.php` Y desde `Pagos::generarRecibo()` (ambos métodos deben pasarlo). La liquidación lo recibe desde `Liquidaciones::generarPdf()`.
 
 ### Teléfonos con prefijo +54
 - Los inputs de teléfono en Propietarios, Inquilinos y Configuración usan un addon visual fijo "+54" (izquierda del input).
@@ -269,26 +271,55 @@ El modal de nueva liquidación tiene un toggle **% Porcentaje / $ Valor fijo**:
 - La barra de búsqueda/filtros está envuelta en un panel `bg-white rounded-xl border shadow-sm p-4`, con `flex flex-wrap gap-3 items-end` y el botón `ml-auto`.
 
 ### Razón social en header y PDFs
-- El header del layout (`layouts/app.blade.php`) muestra `Configuracion::get()->razon_social ?: nombre` arriba a la derecha.
+- El header del layout (`layouts/app.blade.php`) muestra `$cfg->razon_social ?: $cfg->nombre` arriba a la derecha. Se obtiene con un único `@php $cfg = Configuracion::get()` para evitar doble query.
 - Los PDFs de recibo y liquidación también usan la razón social en encabezado y firma.
+
+### Modal de confirmación global (Alpine.js)
+Todas las acciones de eliminar/rescindir usan un modal personalizado en lugar del `confirm()` nativo del navegador.
+
+- Definido en `layouts/app.blade.php` como `x-show="$store.confirm.show"` con animaciones Alpine.
+- Alpine store `$store.confirm` con propiedades: `show`, `titulo`, `mensaje`, `accionLabel`, `colorBtn`, `action`.
+- **Uso en cualquier blade**: `@click="$store.confirm.open(() => $wire.metodo(id), { opciones })"`
+- Opciones disponibles: `titulo`, `mensaje`, `accionLabel`, `colorBtn` ('red' o 'orange').
+- Sin opciones usa defaults: título "¿Confirmar eliminación?", mensaje estándar, botón rojo "Eliminar".
+- Ejemplo con opciones (rescindir): `$store.confirm.open(() => $wire.rescindir(id), { titulo: '¿Rescindir contrato?', mensaje: '...', accionLabel: 'Rescindir', colorBtn: 'orange' })`
+- **No usar `wire:confirm`** — reemplazado en todos los módulos por este patrón.
 
 ### Validaciones — mensajes en español
 Siempre definir mensajes personalizados en `$messages` para todas las reglas usadas (incluyendo `.min`, `.required`, `.numeric`, etc.) para evitar que aparezcan claves crudas tipo `validation.min.string`.
 
 ### Sidebar — estructura y etiquetas
 - Sección **Gestión**: Dashboard, Propietarios, Inquilinos, Casas en alquiler, Casas en venta, Contratos de alquiler
-- Sección **Pagos**: Gastos deducibles, Alquileres, Propietarios (liquidaciones)
+- Sección **Pagos**: Gastos deducibles, **Cobro alquileres** (→ `pagos.index`), **Pago propietarios** (→ `liquidaciones.index`)
 - Sección **Reportes**: Reportes
 - Sección **Sistema**: Configuración
 - Encabezados de sección en `text-amber-400`
 
 ---
 
+## Dashboard — tablas inferiores
+
+### Alquileres vencidos
+- Muestra pagos con `estado = 'pendiente'` cuya `fecha_vencimiento < now()->subDays(11)`.
+- **No depende del campo `estado = 'vencido'`** — se detecta por fecha, sin modificar la BD.
+- Si el inquilino paga y se registra el cobro (estado pasa a `pagado`), desaparece automáticamente.
+- Cada fila muestra: nombre del inquilino, dirección completa de la propiedad, nombre del propietario (si tiene), monto, fecha de vencimiento, y link "Ir al contrato →".
+- Máximo 8 filas, ordenadas por fecha de vencimiento ascendente.
+
+### Contratos próximos a vencer
+- Muestra contratos con `estado = 'activo'` y `fecha_fin <= now()->addDays(60)`.
+- Color de la fecha: **naranja** si faltan entre 30 y 60 días, **rojo** si faltan menos de 30.
+- Cada fila muestra: nombre del inquilino, dirección completa, nombre del propietario (si tiene), fecha de vencimiento, y link "Ir al contrato →".
+- Máximo 5 filas, ordenadas por fecha de vencimiento ascendente.
+- El KPI "Contratos Activos" también usa 60 días para el conteo de "por vencer".
+
+### Reportes — contratos venciendo
+La sección "Contratos que vencen en los próximos 60 días" en Reportes también usa el umbral de 60 días (antes era 90).
+
 ## Marca de agua en Dashboard
 Posición `fixed`, `z-0`, `pointer-events-none`, `opacity: 0.06`.
 CSS padding-left/top para centrar en el área de contenido (sidebar 256px, header 64px).
-- Si hay logo subido: muestra `$config->logo_path`
-- Si no: muestra SVG de casa inline
+- Siempre muestra SVG de casa inline (la sección de logo fue eliminada de Configuración).
 
 ---
 
@@ -335,9 +366,9 @@ php artisan optimize:clear
 - El proyecto usa `git`. Repositorio: `https://github.com/juanmazzola-cmyk/inmobiliariabidart.git`. Rama única: `main` (la rama `demo` fue eliminada).
 - El entorno es Windows 10 con XAMPP. Los paths son `C:\xampp\htdocs\inmobiliaria\`.
 - Para abrir el proyecto localmente: `http://localhost/inmobiliaria/public/`
-- Las fotos de propiedades en alquiler se guardan en `storage/app/public/propiedades-alquiler/`.
-- Las fotos de propiedades en venta se guardan en `storage/app/public/propiedades-venta/`.
-- El logo de configuración se guarda en `storage/app/public/` (path guardado en `configuracion.logo_path`).
+- Las fotos de propiedades en alquiler se guardan en `public/storage/propiedades-alquiler/` (producción) o `storage/app/public/propiedades-alquiler/` (local via symlink).
+- Las fotos de propiedades en venta se guardan en `public/storage/propiedades-venta/` (producción) o `storage/app/public/propiedades-venta/` (local via symlink).
+- El campo `configuracion.logo_path` existe en BD pero ya no se usa (sección de logo eliminada de la UI).
 
 ## Producción — DonWeb hosting compartido
 
@@ -351,8 +382,8 @@ php artisan optimize:clear
 - **Deploy:** automático via webhook GitHub → Feroz panel (git-based). Al hacer `git push` a `main`, Feroz detecta el push y despliega automáticamente.
 - **`.cpanel.yml`** ejecuta post-deploy: `php artisan migrate --force` y `php artisan optimize:clear`.
 - **`vendor/` y `public/build/`** están commiteados en el repo (el servidor no tiene composer ni npm).
-- **Migraciones manuales en producción:** si el `.cpanel.yml` no las aplicó, subir `setup.php` a `public_html/inmobiliariabidart/`, ejecutarlo y borrarlo inmediatamente.
-- **Symlinks deshabilitados:** las fotos aún no funcionan en producción (pendiente resolución).
+- **Migraciones manuales en producción:** recrear un `setup.php` temporal (ver historial git) en `public/`, ejecutarlo desde el browser y borrarlo inmediatamente. El archivo fue eliminado del repositorio por seguridad.
+- **Fotos en producción:** funcionan correctamente. El disco `public` usa `public_path('storage')` como root (sin symlink). Ver sección "Fotos de propiedades".
 
 ### Deploy automático (flujo normal)
 1. Hacer cambios locales
@@ -362,9 +393,7 @@ php artisan optimize:clear
 5. `.cpanel.yml` corre migraciones y limpia caché
 
 ### setup.php
-Script PHP temporal para ejecutar migraciones y limpiar caché en producción (sin SSH).
-Borra: `bootstrap/cache/config.php`, `routes-v7.php`, `services.php`, `packages.php`, `events.php` y `storage/framework/views/*.php`.
-**Siempre borrar el script después de usarlo.**
+Script PHP temporal para ejecutar migraciones, limpiar caché y resetear usuario en producción (sin SSH). **Fue eliminado del repositorio** por seguridad — recrearlo cuando sea necesario a partir del historial git (`git show HEAD~N:public/setup.php`). Siempre borrarlo del servidor después de usarlo.
 
 ---
 
