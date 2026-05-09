@@ -114,27 +114,32 @@
 
         {{-- Alquileres vencidos --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100">
                 <h3 class="font-semibold text-gray-800">Alquileres vencidos</h3>
-                <a href="{{ route('pagos.index') }}" class="text-xs text-blue-600 hover:underline">Ver todos</a>
             </div>
             <div class="divide-y divide-gray-50">
                 @forelse($alquileresVencidos as $pago)
-                <div class="px-5 py-3 flex items-center justify-between">
-                    <div>
+                <div class="px-5 py-3 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
                         <p class="text-sm font-medium text-gray-900">
                             {{ $pago->contrato->inquilino->nombre_completo }}
                         </p>
                         <p class="text-xs text-gray-400">
-                            {{ $pago->contrato->propiedad->tipo_label }} — {{ $pago->periodo_label }}
+                            {{ $pago->contrato->propiedad->direccion_completa }}
                         </p>
                         @if($pago->contrato->propiedad->propietario)
                         <p class="text-xs text-gray-400">{{ $pago->contrato->propiedad->propietario->nombre_completo }}</p>
                         @endif
                     </div>
-                    <div class="text-right">
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1">
                         <p class="text-sm font-bold text-red-600">$ {{ number_format($pago->total, 0, ',', '.') }}</p>
                         <p class="text-xs text-gray-400">Vto. {{ $pago->fecha_vencimiento->format('d/m/Y') }}</p>
+                        <a href="{{ route('contratos.plan-pagos', $pago->contrato->id) }}" target="_blank" title="Plan de pagos"
+                           class="text-violet-500 hover:text-violet-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                        </a>
                     </div>
                 </div>
                 @empty
@@ -145,26 +150,31 @@
 
         {{-- Contratos próximos a vencer --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100">
                 <h3 class="font-semibold text-gray-800">Contratos próximos a vencer</h3>
-                <a href="{{ route('contratos.index') }}" class="text-xs text-blue-600 hover:underline">Ver todos</a>
             </div>
             <div class="divide-y divide-gray-50">
                 @forelse($contratosProximoVencer as $contrato)
-                <div class="px-5 py-3 flex items-center justify-between">
-                    <div>
+                <div class="px-5 py-3 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
                         <p class="text-sm font-medium text-gray-900">{{ $contrato->inquilino->nombre_completo }}</p>
                         <p class="text-xs text-gray-400">
-                            {{ $contrato->propiedad->tipo_label }} — {{ $contrato->propiedad->ciudad }}
+                            {{ $contrato->propiedad->direccion_completa }}
                         </p>
                         @if($contrato->propiedad->propietario)
                         <p class="text-xs text-gray-400">{{ $contrato->propiedad->propietario->nombre_completo }}</p>
                         @endif
                     </div>
-                    <div class="text-right">
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1">
                         <p class="text-xs font-semibold {{ $contrato->fecha_fin->diffInDays(now()) < 30 ? 'text-red-600' : 'text-orange-500' }}">
                             Vence {{ $contrato->fecha_fin->format('d/m/Y') }}
                         </p>
+                        <a href="{{ route('contratos.plan-pagos', $contrato->id) }}" target="_blank" title="Plan de pagos"
+                           class="text-violet-500 hover:text-violet-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                        </a>
                     </div>
                 </div>
                 @empty
