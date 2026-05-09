@@ -12,19 +12,9 @@
     {{-- Sidebar --}}
     <div class="flex h-screen overflow-hidden">
         <aside class="w-64 bg-slate-800 text-white flex flex-col flex-shrink-0">
-            @php $config = \App\Models\Configuracion::get(); @endphp
             <div class="px-6 py-5 border-b border-slate-700">
-                <div class="flex items-center gap-3">
-                    @if($config->logo_path)
-                        <img src="{{ asset('storage/' . $config->logo_path) }}" alt="Logo" class="h-10 w-10 object-contain rounded">
-                    @else
-                        <span class="text-2xl">🏠</span>
-                    @endif
-                    <div>
-                        <h1 class="text-xl font-bold tracking-tight">Inmobiliaria</h1>
-                        <p class="text-xs text-slate-400">Panel de administración</p>
-                    </div>
-                </div>
+                <h1 class="text-xl font-bold tracking-tight">🏠 Inmobiliaria</h1>
+                <p class="text-xs text-slate-400 mt-1">Panel de administración</p>
             </div>
 
             <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
