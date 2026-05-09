@@ -51,7 +51,8 @@ class Dashboard extends Component
             ->sum('total');
 
         $alquileresVencidos = Pago::with(['contrato.propiedad', 'contrato.inquilino'])
-            ->where('estado', 'vencido')
+            ->where('estado', 'pendiente')
+            ->where('fecha_vencimiento', '<', now()->subDays(11))
             ->orderBy('fecha_vencimiento')
             ->limit(8)
             ->get();
