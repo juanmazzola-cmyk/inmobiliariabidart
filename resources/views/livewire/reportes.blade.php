@@ -269,7 +269,7 @@
     @if($contratosVenciendo->count() > 0)
     <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-orange-100 bg-orange-50">
-            <h3 class="font-semibold text-orange-800">Contratos que vencen en los próximos 90 días ({{ $contratosVenciendo->count() }})</h3>
+            <h3 class="font-semibold text-orange-800">Contratos que vencen en los próximos 60 días ({{ $contratosVenciendo->count() }})</h3>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
