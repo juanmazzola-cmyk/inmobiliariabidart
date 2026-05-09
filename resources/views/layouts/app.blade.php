@@ -161,6 +161,76 @@
         </div>
     </div>
 
+    {{-- Modal de confirmación global --}}
+    <div x-data
+         x-show="$store.confirm.show"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center"
+         style="display:none">
+        <div class="absolute inset-0 bg-black/50" @click="$store.confirm.cancel()"></div>
+        <div x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">
+            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="text-center text-lg font-semibold text-gray-900 mb-2" x-text="$store.confirm.titulo"></h3>
+            <p class="text-center text-sm text-gray-500 mb-6" x-text="$store.confirm.mensaje"></p>
+            <div class="flex gap-3">
+                <button @click="$store.confirm.cancel()"
+                        class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    Cancelar
+                </button>
+                <button @click="$store.confirm.accept()"
+                        :class="$store.confirm.colorBtn === 'orange' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-red-600 hover:bg-red-700'"
+                        class="flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        x-text="$store.confirm.accionLabel">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('confirm', {
+            show: false,
+            titulo: '¿Confirmar eliminación?',
+            mensaje: 'Esta acción eliminará el registro y todos sus datos relacionados. No se puede deshacer.',
+            accionLabel: 'Eliminar',
+            colorBtn: 'red',
+            action: null,
+            open(action, options = {}) {
+                this.titulo    = options.titulo    ?? '¿Confirmar eliminación?';
+                this.mensaje   = options.mensaje   ?? 'Esta acción eliminará el registro y todos sus datos relacionados. No se puede deshacer.';
+                this.accionLabel = options.accionLabel ?? 'Eliminar';
+                this.colorBtn  = options.colorBtn  ?? 'red';
+                this.action    = action;
+                this.show      = true;
+            },
+            accept() {
+                if (this.action) this.action();
+                this.show   = false;
+                this.action = null;
+            },
+            cancel() {
+                this.show   = false;
+                this.action = null;
+            }
+        });
+    });
+    </script>
+
     @livewireScripts
 </body>
 </html>

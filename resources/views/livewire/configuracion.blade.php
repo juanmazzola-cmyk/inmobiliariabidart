@@ -111,8 +111,7 @@
             @foreach ($categorias as $cat)
             <div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50">
                 <span class="text-sm text-gray-700">{{ $cat->nombre }}</span>
-                <button wire:click="eliminarCategoria({{ $cat->id }})"
-                    wire:confirm="¿Eliminar la categoría '{{ $cat->nombre }}'?"
+                <button @click="$store.confirm.open(() => $wire.eliminarCategoria({{ $cat->id }}), { titulo: '¿Eliminar categoría?', mensaje: 'Se eliminará la categoría. Esta acción no se puede deshacer.' })"
                     type="button"
                     class="text-gray-300 hover:text-red-500 transition-colors text-xs">
                     ✕
