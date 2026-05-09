@@ -154,6 +154,9 @@
                         <p class="text-xs text-gray-400">
                             {{ $contrato->propiedad->tipo_label }} — {{ $contrato->propiedad->ciudad }}
                         </p>
+                        @if($contrato->propiedad->propietario)
+                        <p class="text-xs text-gray-400">{{ $contrato->propiedad->propietario->nombre_completo }}</p>
+                        @endif
                     </div>
                     <div class="text-right">
                         <p class="text-xs font-semibold {{ $contrato->fecha_fin->diffInDays(now()) < 30 ? 'text-red-600' : 'text-orange-500' }}">

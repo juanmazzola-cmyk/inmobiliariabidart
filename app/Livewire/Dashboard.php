@@ -56,7 +56,7 @@ class Dashboard extends Component
             ->limit(8)
             ->get();
 
-        $contratosProximoVencer = Contrato::with(['propiedad', 'inquilino'])
+        $contratosProximoVencer = Contrato::with(['propiedad.propietario', 'inquilino'])
             ->where('estado', 'activo')
             ->where('fecha_fin', '<=', now()->addDays(60))
             ->orderBy('fecha_fin')
